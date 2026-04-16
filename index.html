@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThinkMake — AI tools for real problems</title>
+  <meta name="description" content="ThinkMake builds focused AI tools that solve real, everyday problems." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #f9fafb;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --faint: #9ca3af;
+      --accent-blue: #6366f1;
+      --accent-purple: #a855f7;
+      --accent-mid: #8b5cf6;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent-mid); }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      overflow: hidden;
+    }
+
+    /* Raycast-style glow blobs */
+    .glow-wrap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -42%);
+      width: 900px;
+      height: 560px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      mix-blend-mode: normal;
+    }
+
+    .glow-blob-1 {
+      width: 560px; height: 380px;
+      top: 50px; left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center,
+        rgba(99, 102, 241, 0.38) 0%,
+        rgba(139, 92, 246, 0.22) 45%,
+        rgba(168, 85, 247, 0.0) 75%);
+    }
+
+    .glow-blob-2 {
+      width: 420px; height: 260px;
+      top: 120px; left: 50%;
+      transform: translateX(-48%);
+      background: radial-gradient(ellipse at center,
+        rgba(139, 92, 246, 0.28) 0%,
+        rgba(168, 85, 247, 0.14) 50%,
+        transparent 75%);
+    }
+
+    /* Animated shimmer ring */
+    .glow-ring {
+      position: absolute;
+      width: 680px; height: 200px;
+      top: 170px; left: 50%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: transparent;
+      box-shadow:
+        0 0 0 1px rgba(139, 92, 246, 0.12),
+        0 0 80px 20px rgba(99, 102, 241, 0.08);
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scaleX(1); }
+      50% { opacity: 1; transform: translateX(-50%) scaleX(1.03); }
+    }
+
+    .hero-badge {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));
+      border: 1px solid rgba(139,92,246,0.2);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-mid);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge::before {
+      content: '';
+      display: block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-mid);
+      box-shadow: 0 0 6px var(--accent-mid);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    .hero-title {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(60px, 9vw, 96px);
+      font-weight: 900;
+      letter-spacing: -3px;
+      line-height: 1.0;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      position: relative;
+      z-index: 1;
+      font-size: clamp(18px, 2.5vw, 24px);
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: -0.2px;
+      max-width: 480px;
+      line-height: 1.5;
+      margin-bottom: 44px;
+    }
+
+    .hero-cta {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .hero-cta:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(99,102,241,0.45);
+    }
+    .hero-cta svg { width: 16px; height: 16px; }
+
+    /* scroll indicator */
+    .scroll-hint {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--faint);
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      animation: fadeDown 2s ease-in-out infinite;
+      z-index: 1;
+    }
+    @keyframes fadeDown {
+      0%,100% { opacity: 0.4; transform: translateX(-50%) translateY(0); }
+      50% { opacity: 1; transform: translateX(-50%) translateY(4px); }
+    }
+    .scroll-hint svg { width: 20px; height: 20px; }
+
+    /* ── SECTION ── */
+    section {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--faint);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── PRODUCT CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      position: relative;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg);
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.08);
+    }
+
+    /* card inner glow on hover */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      border-radius: 20px;
+      transition: opacity 0.3s;
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card-carmonitor::before {
+      background: radial-gradient(ellipse at top left, rgba(63,185,80,0.06), transparent 60%);
+    }
+    .card-careerpath::before {
+      background: radial-gradient(ellipse at top left, rgba(99,102,241,0.06), transparent 60%);
+    }
+
+    /* Card illustration area */
+    .card-visual {
+      height: 220px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-visual-carmonitor {
+      background: #0d1117;
+    }
+    .card-visual-careerpath {
+      background: #0f0f23;
+    }
+
+    /* CarMonitor visual */
+    .cm-radar {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+    .cm-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid #3fb950;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      animation: expand 3s ease-out infinite;
+    }
+    .cm-ring:nth-child(1) { width: 60px; height: 60px; opacity: 0.9; animation-delay: 0s; }
+    .cm-ring:nth-child(2) { width: 90px; height: 90px; opacity: 0.5; animation-delay: 0.4s; }
+    .cm-ring:nth-child(3) { width: 120px; height: 120px; opacity: 0.25; animation-delay: 0.8s; }
+    .cm-ring:nth-child(4) { width: 150px; height: 150px; opacity: 0.1; animation-delay: 1.2s; }
+
+    @keyframes expand {
+      0% { opacity: var(--o, 0.6); transform: translate(-50%,-50%) scale(0.8); }
+      80% { opacity: 0; transform: translate(-50%,-50%) scale(1.15); }
+      100% { opacity: 0; }
+    }
+
+    .cm-car {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    .cp-visual-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cp-bar-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 80px;
+    }
+    .cp-bar {
+      width: 18px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(to top, #6366f1, #a855f7);
+      opacity: 0.85;
+      animation: barGrow 1.5s ease-out forwards;
+      transform-origin: bottom;
+    }
+    @keyframes barGrow {
+      from { transform: scaleY(0); opacity: 0; }
+      to { transform: scaleY(1); opacity: 0.85; }
+    }
+    .cp-bar:nth-child(1) { height: 32px; animation-delay: 0s; }
+    .cp-bar:nth-child(2) { height: 50px; animation-delay: 0.1s; }
+    .cp-bar:nth-child(3) { height: 68px; animation-delay: 0.2s; }
+    .cp-bar:nth-child(4) { height: 44px; animation-delay: 0.3s; }
+    .cp-bar:nth-child(5) { height: 75px; animation-delay: 0.4s; }
+    .cp-bar:nth-child(6) { height: 56px; animation-delay: 0.5s; }
+
+    .cp-label {
+      font-family: 'Inter', monospace;
+      font-size: 11px;
+      color: #6366f1;
+      letter-spacing: 1px;
+      opacity: 0.7;
+    }
+
+    /* glow bg on dark visuals */
+    .visual-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(50px);
+      pointer-events: none;
+    }
+    .vg-green { width: 200px; height: 200px; background: rgba(63,185,80,0.15); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .vg-purple { width: 220px; height: 220px; background: rgba(99,102,241,0.18); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+
+    /* Card body */
+    .card-body {
+      padding: 28px 32px 32px;
+    }
+
+    .card-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 14px;
+    }
+    .tag-green {
+      color: #3fb950;
+      background: rgba(63,185,80,0.1);
+      border: 1px solid rgba(63,185,80,0.2);
+    }
+    .tag-purple {
+      color: var(--accent-mid);
+      background: rgba(139,92,246,0.1);
+      border: 1px solid rgba(139,92,246,0.2);
+    }
+
+    .card-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: gap 0.15s;
+    }
+    .card-link:hover { gap: 10px; }
+    .link-green { color: #3fb950; }
+    .link-purple { color: var(--accent-mid); }
+    .card-link svg { width: 14px; height: 14px; }
+
+    /* ── STATS BAR ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 100px;
+      max-width: 1080px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 24px;
+    }
+
+    .stat {
+      background: var(--bg);
+      padding: 36px 32px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .footer-logo span { color: var(--accent-mid); }
+
+    .footer-copy {
+      font-size: 13px;
+      color: var(--faint);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--faint);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--muted); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .cards { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 16px; text-align: center; }
+      .footer-links { justify-content: center; }
+      .hero-title { letter-spacing: -2px; }
+      .glow-wrap { width: 100vw; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="/">Think<span>Make</span></a>
+    <ul class="nav-links">
+      <li><a href="#products">Products</a></li>
+      <li><a href="https://t.me/TorontoCarAlert" target="_blank">Telegram</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <!-- Raycast glow -->
+    <div class="glow-wrap" aria-hidden="true">
+      <div class="glow-blob glow-blob-1"></div>
+      <div class="glow-blob glow-blob-2"></div>
+      <div class="glow-ring"></div>
+    </div>
+
+    <div class="hero-badge">Now live</div>
+
+    <h1 class="hero-title">
+      Think<span class="gradient-text">Make</span>
+    </h1>
+    <p class="hero-subtitle">AI tools for real problems</p>
+
+    <a class="hero-cta" href="#products">
+      Explore products
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 8h10M9 4l4 4-4 4"/>
+      </svg>
+    </a>
+
+    <div class="scroll-hint" aria-hidden="true">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 4v12M5 11l5 5 5-5"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-number">2</div>
+      <div class="stat-label">Products shipped</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">24/7</div>
+      <div class="stat-label">Automated monitoring</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Problems to solve</div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <section id="products">
+    <div class="section-label">Products</div>
+    <div class="cards">
+
+      <!-- CarMonitor -->
+      <a class="card card-carmonitor" href="https://t.me/TorontoCarAlert" target="_blank">
+        <div class="card-visual card-visual-carmonitor">
+          <div class="visual-glow vg-green"></div>
+          <div class="cm-radar">
+            <div class="cm-ring"></div>
+            <div class="cm-ring"></div>
+            <div class="cm-ring"></div>
+            <div class="cm-ring"></div>
+            <div class="cm-car">
+              <svg width="64" height="32" viewBox="0 0 64 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- body -->
+                <rect x="4" y="14" width="56" height="12" rx="4" fill="#3fb950"/>
+                <!-- cabin -->
+                <path d="M16 14 L22 4 L44 4 L50 14 Z" fill="#3fb950"/>
+                <!-- windows -->
+                <path d="M18 14 L22 6 L30 6 L30 14 Z" fill="#0d1117" opacity="0.55"/>
+                <path d="M32 14 L32 6 L42 6 L47 14 Z" fill="#0d1117" opacity="0.55"/>
+                <!-- wheels -->
+                <circle cx="17" cy="26" r="6" fill="#0d1117" stroke="#3fb950" stroke-width="2"/>
+                <circle cx="17" cy="26" r="2.5" fill="#3fb950"/>
+                <circle cx="47" cy="26" r="6" fill="#0d1117" stroke="#3fb950" stroke-width="2"/>
+                <circle cx="47" cy="26" r="2.5" fill="#3fb950"/>
+                <!-- headlight -->
+                <circle cx="60" cy="18" r="2.5" fill="white" opacity="0.9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-tag tag-green">Live</span>
+          <h2 class="card-title">CarMonitor</h2>
+          <p class="card-desc">
+            Real-time Kijiji GTA car deal alerts on Telegram. Scrapes listings every 5 minutes, filters by price vs market value, and pushes only the best deals.
+          </p>
+          <span class="card-link link-green">
+            @TorontoCarAlert
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M7 2l5 5-5 5"/>
+            </svg>
+          </span>
+        </div>
+      </a>
+
+      <!-- CareerPath -->
+      <a class="card card-careerpath" href="#" target="_blank">
+        <div class="card-visual card-visual-careerpath">
+          <div class="visual-glow vg-purple"></div>
+          <div class="cp-visual-wrap">
+            <div class="cp-bar-group">
+              <div class="cp-bar"></div>
+              <div class="cp-bar"></div>
+              <div class="cp-bar"></div>
+              <div class="cp-bar"></div>
+              <div class="cp-bar"></div>
+              <div class="cp-bar"></div>
+            </div>
+            <div class="cp-label">CAREER SIGNALS</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-tag tag-purple">Coming soon</span>
+          <h2 class="card-title">CareerPath</h2>
+          <p class="card-desc">
+            AI-powered career intelligence. Tracks job market trends, surfaces the right opportunities, and helps you navigate your next move with data.
+          </p>
+          <span class="card-link link-purple">
+            Get notified
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 7h10M7 2l5 5-5 5"/>
+            </svg>
+          </span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Think<span>Make</span></div>
+    <div class="footer-copy">© 2026 ThinkMake. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="https://t.me/TorontoCarAlert" target="_blank">Telegram</a>
+      <a href="mailto:hello@thinkmake.ai">Contact</a>
+    </div>
+  </footer>
+
+</body>
+</html>
