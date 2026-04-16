@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
 
 // ── CONSTANTS ──────────────────────────────────────────────
 
@@ -49,54 +50,33 @@ const CONCERN_OPTIONS = [
   '其他',
 ]
 
-// ── MARKDOWN PARSER ────────────────────────────────────────
+// ── SAFE DATA EXTRACTOR ────────────────────────────────────
+// Guards against Claude returning full JSON as the full_report field
 
-function parseMarkdown(md) {
-  if (!md) return ''
-  const lines = md.split('\n')
-  const out = []
-  let listBuf = []
-  let listType = null
+function safeExtract(data) {
+  const careers = data?.summary?.careers || []
 
-  function flushList() {
-    if (!listBuf.length) return
-    const tag = listType === 'ol' ? 'ol' : 'ul'
-    out.push(`<${tag} class="md-${tag}">${listBuf.join('')}</${tag}>`)
-    listBuf = []
-    listType = null
+  let fr = data?.full_report || ''
+
+  // If full_report is itself a JSON blob (fallback path), try to unwrap it
+  if (typeof fr === 'string' && fr.trimStart().startsWith('{')) {
+    try {
+      const inner = JSON.parse(fr)
+      if (inner.full_report) fr = inner.full_report
+    } catch { /* leave fr as-is */ }
   }
 
-  function inline(text) {
-    return text
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>')
-      .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+  // If careers is empty but full_report has JSON-looking content, try harder
+  if (careers.length === 0 && typeof fr === 'string' && fr.includes('"careers"')) {
+    try {
+      const inner = JSON.parse(fr)
+      if (inner.summary?.careers) {
+        return { careers: inner.summary.careers, fullReport: inner.full_report || fr }
+      }
+    } catch { /* ignore */ }
   }
 
-  for (const line of lines) {
-    if (/^### /.test(line)) {
-      flushList(); out.push(`<h3 class="md-h3">${inline(line.slice(4))}</h3>`)
-    } else if (/^## /.test(line)) {
-      flushList(); out.push(`<h2 class="md-h2">${inline(line.slice(3))}</h2>`)
-    } else if (/^# /.test(line)) {
-      flushList(); out.push(`<h1 class="md-h1">${inline(line.slice(2))}</h1>`)
-    } else if (/^\d+\. /.test(line)) {
-      if (listType === 'ul') flushList()
-      listType = 'ol'
-      listBuf.push(`<li>${inline(line.replace(/^\d+\. /, ''))}</li>`)
-    } else if (/^[-•*] /.test(line)) {
-      if (listType === 'ol') flushList()
-      listType = 'ul'
-      listBuf.push(`<li>${inline(line.slice(2))}</li>`)
-    } else if (line.trim() === '') {
-      flushList(); out.push('<div class="md-spacer"></div>')
-    } else {
-      flushList(); out.push(`<p class="md-p">${inline(line)}</p>`)
-    }
-  }
-  flushList()
-  return out.join('')
+  return { careers, fullReport: fr }
 }
 
 // ── MAIN COMPONENT ─────────────────────────────────────────
@@ -177,8 +157,7 @@ export default function CareerPage() {
 
   // ── RESULT ──
   if (step === 'result' && result) {
-    const careers = result.summary?.careers || []
-    const fullReport = result.full_report || ''
+    const { careers, fullReport } = safeExtract(result)
     const emailFailed = result.email_failed
 
     return (
@@ -218,8 +197,19 @@ export default function CareerPage() {
           </button>
 
           {expanded && fullReport && (
-            <div className="result-content"
-              dangerouslySetInnerHTML={{ __html: parseMarkdown(fullReport) }} />
+            <div className="result-content">
+              <ReactMarkdown
+                components={{
+                  a: ({ href, children, ...props }) => (
+                    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {fullReport}
+              </ReactMarkdown>
+            </div>
           )}
 
           <div className="result-actions">
