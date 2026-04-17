@@ -5,86 +5,57 @@ import { jobs } from '../../lib/jobStore'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-// ── SYSTEM PROMPTS ─────────────────────────────────────────
+// ── SYSTEM PROMPT (single call) ────────────────────────────
 
-// Fast prompt: returns only careers summary, ~3-5s
-const SUMMARY_PROMPT = `你是加拿大职业规划顾问，专门帮助中国新移民。
+const SYSTEM_PROMPT = `你是专门帮助中国新移民规划加拿大职业路径的顾问。
+数据来源：Skilled Trades Ontario、CNO、CPA Ontario、FSRA、RECO、Job Bank Canada。
 
-推荐逻辑（严格按此执行）：
-第一步：分析用户职业背后的核心可迁移技能（不是职业名称本身，是背后的能力）
-  例如：汽车销售 → 大额谈判、客户关系管理、销售成交、产品知识传递
-  例如：护士 → 医疗护理知识、患者沟通、应急处置、团队协作
-  例如：竖琴手 → 演奏技术、教学能力、音乐理论、表演经验
-  例如：厨师 → 食品制作、食品安全管理、团队协调、成本控制
+【推荐逻辑 — 严格执行】
+第一步：分析用户职业背后的核心可迁移技能（是能力，不是职业名称）
+  例如：汽车销售 → 大额谈判、客户关系管理、销售成交
+  例如：护士 → 医疗护理、患者沟通、应急处置
+  例如：厨师 → 食品制作、食品安全管理、团队协调
+  例如：会计 → 财务分析、数据处理、合规意识
 
-第二步：基于这些核心技能推荐恰好3个职业：
-  - 第一个：最直接对口，技能完全匹配，入行最快
+第二步：基于核心技能推荐恰好3个职业：
+  - 第一个：技能完全匹配，入行最快
   - 第二个：核心技能高度可迁移，发展空间更大
-  - 第三个：部分技能迁移，结合其他优势（学历/预算/英语）可以进入
+  - 第三个：部分技能迁移，结合学历/预算/英语优势
 
-第三步：禁止规则（违反则重新推荐）：
-  - 禁止推荐与用户核心技能完全无关的职业
-  - 不能因为英语好、有驾照、或其他次要因素推荐无关职业
-  - 除非用户职业本身是驾驶相关，否则不推荐驾驶类职业
-  - match_reason必须说明具体哪项技能匹配，不能泛泛而谈
+第三步：禁止规则
+  - 禁止推荐与核心技能完全无关的职业
+  - G驾照是辅助条件，不是推荐依据；除非用户职业本身是运输/驾驶相关，否则不推荐驾驶类职业；其他职业背景的G驾照只作补充说明（如"有G驾照方便带客户看房"）
+  - match_reason必须说明具体技能匹配点，不能泛泛而谈
 
-只返回以下JSON格式，不要任何其他内容，不要markdown代码块标记：
-{
-  "careers": [
-    {
-      "name": "职业名（中英文，如：保险经纪人 Insurance Broker）",
-      "emoji": "一个相关emoji",
-      "match_reason": "一句话说明核心技能如何匹配，例如：你的大额谈判和客户关系技能直接对应此职业，LLQP支持中文应考",
-      "time": "预计认证时间（如：4–6个月）",
-      "cost": "总费用范围（如：$500–$2,000）",
-      "salary": "安省年薪范围（如：$55,000–$90,000）"
-    }
-  ]
-}
-恰好推荐3个职业，按匹配度从高到低排列。`
-
-// Full prompt: used for email report only
-const FULL_REPORT_PROMPT = `你是专门帮助中国新移民规划加拿大职业路径的顾问。
-数据来源于以下权威机构：
-- Skilled Trades Ontario (skilledtradesontario.ca)
-- College of Nurses of Ontario (cno.org)
-- CPA Ontario (cpaontario.ca)
-- CTCMPAO (ctcmpao.on.ca)
-- FSRA (fsrao.ca) — 金融/保险/房产监管
-- RECO (reco.on.ca) — 安省房地产经纪
-- Job Bank Canada (jobbank.gc.ca)
-
-推荐逻辑（严格执行）：
-第一步：分析用户职业背后的核心可迁移技能（能力，不是职业名称）
-第二步：推荐3个职业 — 第一个最直接对口，第二个技能高度迁移，第三个部分迁移
-第三步：禁止推荐与核心技能完全无关的职业；match_reason必须说明具体技能匹配点
-
-分析规则：
+【分析规则】
 1. 学历：硕士/本科→RN、CPA、工程师；大专→RPN、ECE；高中→技工学徒
-2. 工作年限：8年以上→提示Trade Equivalency Assessment（可免部分学徒时间）
+2. 工作年限：8年以上→提示Trade Equivalency Assessment
 3. 目前状态：还没来→来之前准备清单；刚到6个月→立即行动方案；已在1年+→直接进阶建议
 4. 学习+周期：全职+1年内→只推短认证；兼职+1-3年→弹性课程；极度有限→在线碎片化
 5. 省份：安大略→详细机构+步骤+费用+链接；其他省→方向性建议+当地机构链接
 6. 英语：基础→推中文考试选项；中等→提示哪些环节需英语；流利→说明额外机会
-7. 预算：不够→分阶段方案，说明第一步只需多少；够→说明可考虑备选路径
+7. 预算：不够→分阶段方案；够→说明备选路径
 8. 顾虑：每个顾虑都在报告里直接回应
 
-完整报告结构：
-一、推荐职业方向（每个职业详细展开）
-   - 为什么推荐（说明具体技能迁移点，结合用户背景）
-   - 认证机构名称 + 官网链接
-   - 认证步骤（分点列出）
-   - 预计时间线
-   - 费用明细
-   - 年薪范围
-二、针对你的英语水平的建议
-三、针对你的预算的规划
-四、关于你的顾虑：[直接回应]
-五、第一步行动清单（3条这周可以执行的具体行动）
-六、免责声明：以上信息仅供参考，具体要求请以各认证机构官方网站最新公告为准。
+【返回格式】
+只返回以下JSON，不要markdown代码块，不要其他任何内容：
+{
+  "summary": {
+    "careers": [
+      {
+        "name": "职业名（中英文，如：保险经纪人 Insurance Broker）",
+        "emoji": "一个相关emoji",
+        "match_reason": "一句话说明核心技能匹配，例如：你8年的大额谈判和客户关系技能直接对口，LLQP支持中文应考",
+        "time": "预计认证时间",
+        "cost": "总费用范围",
+        "salary": "安省年薪范围"
+      }
+    ]
+  },
+  "full_report": "完整markdown报告内容（包含以下六部分）：\\n一、推荐职业方向（每个详细展开：为什么推荐/认证机构+官网链接/步骤/时间线/费用/年薪）\\n二、针对你的英语水平的建议\\n三、针对你的预算的规划\\n四、关于你的顾虑\\n五、第一步行动清单（3条这周可以执行的具体行动）\\n六、免责声明"
+}
 
-语气：专业但亲切，像在加拿大生活多年的过来人。全程简体中文。
-只返回markdown格式报告内容，不要JSON包装。`
+语气：专业但亲切，像在加拿大生活多年的过来人。全程简体中文。`
 
 // ── HELPERS ────────────────────────────────────────────────
 
@@ -188,11 +159,10 @@ function buildEmailHtml({ name, careers, full_report }) {
 </html>`
 }
 
-// ── BACKGROUND: full report + email ────────────────────────
+// ── BACKGROUND: email only (no second Claude call) ─────────
 
-async function generateAndSend({ userPrompt, name, email, careers, requestId }) {
+async function sendEmail({ name, email, careers, full_report, requestId }) {
   try {
-    const full_report = await callClaude(FULL_REPORT_PROMPT, userPrompt, 3000)
     console.log('[CareerPath] 准备发送邮件到:', email)
     console.log('[CareerPath] Resend key存在:', !!process.env.RESEND_API_KEY)
     if (resend) {
@@ -202,9 +172,7 @@ async function generateAndSend({ userPrompt, name, email, careers, requestId }) 
         subject: `你好 ${name}，这是你的加拿大职业规划`,
         text: `你好 ${name}，感谢使用CareerPath职业规划工具。你的规划报告已生成，请查看HTML版本获取完整内容。`,
         html: buildEmailHtml({ name, careers, full_report }),
-        headers: {
-          'X-Entity-Ref-ID': randomUUID(),
-        },
+        headers: { 'X-Entity-Ref-ID': randomUUID() },
       })
       console.log('[CareerPath] 邮件发送结果:', JSON.stringify(emailResult))
       jobs.set(requestId, 'sent')
@@ -213,7 +181,7 @@ async function generateAndSend({ userPrompt, name, email, careers, requestId }) 
       jobs.set(requestId, 'failed')
     }
   } catch (err) {
-    console.error('[CareerPath] background error:', err)
+    console.error('[CareerPath] email error:', err)
     jobs.set(requestId, 'failed')
   }
 }
@@ -255,24 +223,26 @@ export async function POST(request) {
 
 请分析以上背景，生成职业规划报告。`
 
-    // ── Step 1: Fast summary (3-5s) ──
-    const rawSummary = await callClaude(SUMMARY_PROMPT, userPrompt, 800)
-    console.log('[CareerPath] raw summary:', rawSummary.slice(0, 300))
+    // ── Single Claude call ──
+    const rawText = await callClaude(SYSTEM_PROMPT, userPrompt, 3000)
+    console.log('[CareerPath] raw response (first 300):', rawText.slice(0, 300))
 
     let careers = []
+    let full_report = ''
     try {
-      const parsed = parseJSON(rawSummary)
-      careers = parsed.careers || []
+      const parsed = parseJSON(rawText)
+      careers = parsed.summary?.careers || []
+      full_report = parsed.full_report || ''
       console.log('[CareerPath] parsed careers count:', careers.length)
     } catch (err) {
-      console.error('[CareerPath] summary parse error:', err.message)
+      console.error('[CareerPath] parse error:', err.message)
     }
 
     const requestId = randomUUID()
     jobs.set(requestId, 'pending')
 
-    // ── Step 2: Background full report + email ──
-    generateAndSend({ userPrompt, name, email, careers, requestId })
+    // ── Background: send email only ──
+    sendEmail({ name, email, careers, full_report, requestId })
 
     return NextResponse.json({ careers, requestId })
   } catch (err) {
