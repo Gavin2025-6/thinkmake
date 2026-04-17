@@ -848,7 +848,7 @@ footer {
   .career-data-row { gap: 12px; }
 }
 
-/* ── RESULT PAGE REDESIGN ── */
+/* ── RESULT PAGE (MINIMAL) ── */
 
 .result-hero {
   background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 60%, #ddd6fe 100%);
@@ -1017,6 +1017,101 @@ footer {
   gap: 16px;
   padding: 0 24px 40px;
 }
+/* ── MINIMAL RESULT PAGE ── */
+
+.res-header {
+  background: #F5F3FF;
+  padding: 40px 24px 32px;
+  text-align: center;
+}
+.res-header-meta {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e1b4b;
+  margin-bottom: 8px;
+}
+.res-header-sub {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+.res-email-tag {
+  display: inline-block;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.res-email-tag-warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.res-email-tag-pending {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.res-cards-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+.res-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.res-card {
+  background: #fff;
+  border: 1px solid #ede9fe;
+  border-radius: 16px;
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.res-card-emoji { font-size: 32px; line-height: 1; }
+.res-card-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.3;
+}
+.res-card-reason {
+  font-size: 13px;
+  color: #7c3aed;
+  line-height: 1.65;
+  flex: 1;
+}
+.res-card-data {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  padding-top: 4px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.res-bottom {
+  text-align: center;
+  padding: 0 24px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.res-bottom-note {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
 .btn-outline {
   font-size: 14px;
   font-weight: 600;
@@ -1030,46 +1125,77 @@ footer {
   transition: background 0.15s, border-color 0.15s;
 }
 .btn-outline:hover { background: #faf5ff; border-color: var(--brand); }
-
-.result-sources-row {
+.res-sources {
   font-size: 12px;
   color: #9ca3af;
-  text-align: center;
   line-height: 2;
 }
-.result-sources-row a {
+.res-sources a { color: #7c3aed; text-decoration: none; }
+.res-sources a:hover { text-decoration: underline; }
+
+.res-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 6px 0 0;
+}
+
+.form-required-note {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0 0 20px;
+}
+
+/* English resources section on career cards */
+.res-eng-section {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 10px;
+}
+.res-eng-toggle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7c3aed;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.res-eng-toggle:hover { text-decoration: underline; }
+.res-eng-list {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.res-eng-list li {
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.5;
+}
+.res-eng-list a {
   color: #7c3aed;
   text-decoration: none;
 }
-.result-sources-row a:hover { text-decoration: underline; }
-
-/* result page markdown table support */
-.result-content table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  margin: 16px 0;
-}
-.result-content th,
-.result-content td {
-  border: 1px solid #e9d5ff;
-  padding: 8px 12px;
-  text-align: left;
-}
-.result-content th {
-  background: #faf5ff;
-  font-weight: 600;
-  color: #6d28d9;
-}
-.result-content code {
-  background: #f3f4f6;
-  border-radius: 4px;
-  padding: 2px 6px;
-  font-size: 13px;
+.res-eng-list a:hover { text-decoration: underline; }
+.res-eng-fluent {
+  font-size: 12px;
+  color: #15803d;
+  background: #f0fdf4;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 4px;
 }
 
 @media (max-width: 640px) {
-  .result-hero-title { font-size: 20px; }
-  .result-career-grid { grid-template-columns: 1fr; }
-  .result-section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .res-cards-grid { grid-template-columns: 1fr; }
+  .res-cards-wrap { padding: 32px 20px; }
 }
