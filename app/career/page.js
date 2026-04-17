@@ -98,7 +98,6 @@ export default function CareerPage() {
   const [emailStatus, setEmailStatus] = useState('pending')  // pending | sent | failed
   const [error, setError] = useState('')
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
-  const [expandedEnglish, setExpandedEnglish] = useState({})
   const loadingTimerRef = useRef(null)
 
   // Rotate loading messages every 3s
@@ -172,7 +171,7 @@ export default function CareerPage() {
   function resetForm() {
     clearInterval(loadingTimerRef.current)
     setStep('form'); setCareers([]); setEmailStatus('pending')
-    setError(''); setLoadingMsgIdx(0); setExpandedEnglish({})
+    setError(''); setLoadingMsgIdx(0)
     setForm(EMPTY_FORM)
   }
 
@@ -213,41 +212,18 @@ export default function CareerPage() {
         <div className="res-cards-wrap">
           {careers.length > 0 ? (
             <div className="res-cards-grid">
-              {careers.map((c, i) => {
-                const engResources = c.english_resources || []
-                const isOpen = !!expandedEnglish[i]
-                return (
-                  <div key={i} className="res-card">
-                    <div className="res-card-emoji">{getCareerEmoji(c.name, c.emoji)}</div>
-                    <div className="res-card-name">{c.name}</div>
-                    <div className="res-card-reason">{c.match_reason}</div>
-                    <div className="res-card-data">
-                      <span>⏱ {c.time}</span>
-                      <span>💰 {c.cost}</span>
-                      <span>📈 {c.salary}</span>
-                    </div>
-                    {engResources.length > 0 && (
-                      <div className="res-eng-section">
-                        <button className="res-eng-toggle"
-                          onClick={() => setExpandedEnglish(prev => ({ ...prev, [i]: !prev[i] }))}>
-                          📚 英语学习资源 {isOpen ? '↑' : '↓'}
-                        </button>
-                        {isOpen && (
-                          <ul className="res-eng-list">
-                            {engResources.map((item, j) => (
-                              <li key={j}>
-                                {item.url
-                                  ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.name}</a>
-                                  : item.name}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
+              {careers.map((c, i) => (
+                <div key={i} className="res-card">
+                  <div className="res-card-emoji">{getCareerEmoji(c.name, c.emoji)}</div>
+                  <div className="res-card-name">{c.name}</div>
+                  <div className="res-card-reason">{c.match_reason}</div>
+                  <div className="res-card-data">
+                    <span>⏱ {c.time}</span>
+                    <span>💰 {c.cost}</span>
+                    <span>📈 {c.salary}</span>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="res-empty">数据解析失败，请查收邮件中的完整报告</div>

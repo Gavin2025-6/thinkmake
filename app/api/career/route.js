@@ -401,7 +401,13 @@ export async function POST(request) {
     const reportMatch = text.match(/===REPORT_START===([\s\S]*?)===REPORT_END===/)
 
     const careersRaw = careersMatch?.[1]?.trim() || ''
-    const full_report = reportMatch?.[1]?.trim() || text
+    // Strip all delimiter markers and raw pipe-format lines from report
+    const rawReport = reportMatch?.[1]?.trim() || text
+    const full_report = rawReport
+      .replace(/===CAREERS_START===[\s\S]*?===CAREERS_END===/g, '')
+      .replace(/===REPORT_START===|===REPORT_END===/g, '')
+      .replace(/^职业\d+[：:].*\|.*$/gm, '')
+      .trim()
 
     const careers = careersRaw.split('\n')
       .filter(line => line.trim() && line.includes('|'))
