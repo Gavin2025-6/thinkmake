@@ -28,12 +28,24 @@ const SYSTEM_PROMPT = `你是加拿大华人新移民职业规划顾问。
 - 预算不足：给分阶段方案，说明第一步只需多少钱
 - 顾虑：每一条都在报告里直接回应
 
+英语学习资源规则（每个职业必须返回2-3个，必须是真实URL，绝对不能写"搜索YouTube"等泛泛建议）：
+- 证券/投资顾问：CSI::https://www.csi.ca | CIRO::https://www.ciro.ca | Investopedia::https://www.investopedia.com
+- 理财规划师 CFP：FP Canada::https://www.fpcanada.ca | Advocis::https://www.advocis.ca
+- 房地产经纪：RECO::https://www.reco.on.ca | Humber Real Estate::https://humber.ca/ce/real-estate
+- 贷款经纪 Mortgage Broker：FSRA::https://www.fsrao.ca | REMIC::https://www.remic.ca
+- 注册护士 RN / RPN：CNO::https://www.cno.org | NNAS::https://www.nnas.ca
+- IT/软件/程序员：freeCodeCamp::https://www.freecodecamp.org | AWS Training::https://www.aws.training | Google Certificates::https://grow.google/certificates
+- 技工（电工/水管/焊接等）：Skilled Trades Ontario::https://www.skilledtradesontario.ca | George Brown::https://www.georgebrown.ca
+- 保险经纪：FSRA::https://www.fsrao.ca | IFSE::https://www.ifse.ca | Advocis::https://www.advocis.ca
+- 会计 CPA：CPA Ontario::https://www.cpaontario.ca | Investopedia::https://www.investopedia.com
+- 其他职业：Job Bank Canada::https://www.jobbank.gc.ca | Settlement.org::https://settlement.org
+
 输出格式（严格按此结构，不要JSON，不要markdown代码块）：
 
 ===CAREERS_START===
-职业1：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
-职业2：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
-职业3：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
+职业1：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪|资源1名称::资源1完整URL|资源2名称::资源2完整URL
+职业2：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪|资源1名称::资源1完整URL|资源2名称::资源2完整URL
+职业3：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪|资源1名称::资源1完整URL|资源2名称::资源2完整URL
 ===CAREERS_END===
 
 ===REPORT_START===
@@ -284,11 +296,12 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
 // ── EMAIL SENDER ───────────────────────────────────────────
 
 async function sendEmail(body, careers, full_report) {
-  if (!resend) { console.log('[CareerPath] Resend未初始化'); return false }
+  console.log('准备发邮件给:', body.email)
+  console.log('Resend key:', !!process.env.RESEND_API_KEY)
+  if (!resend) { console.log('[CareerPath] Resend未初始化，跳过发送'); return false }
   try {
     const { name, salutation, email, province } = body
     const addressName = getAddressName(name, salutation)
-    console.log('[CareerPath] 发送邮件到:', email, '称呼:', addressName)
     const result = await resend.emails.send({
       from: 'CareerPath <onboarding@resend.dev>',
       to: email,
@@ -297,10 +310,14 @@ async function sendEmail(body, careers, full_report) {
       html: buildEmailHtml({ name, salutation, province, careers, full_report }),
       headers: { 'X-Entity-Ref-ID': randomUUID() },
     })
-    console.log('[CareerPath] 邮件结果:', JSON.stringify(result))
+    console.log('发送结果:', JSON.stringify(result))
+    if (result.error) {
+      console.error('[CareerPath] Resend错误:', JSON.stringify(result.error))
+      return false
+    }
     return true
   } catch (err) {
-    console.error('[CareerPath] 邮件失败:', err)
+    console.error('[CareerPath] 邮件异常:', err.message)
     return false
   }
 }
@@ -357,6 +374,15 @@ export async function POST(request) {
       .map(line => {
         const parts = line.replace(/^职业\d+[：:]\s*/, '').split('|')
         const name = parts[0]?.trim() || ''
+        // Parse resources from fields [6+]: "资源名称::URL"
+        const rawResources = parts.slice(6).map(r => r?.trim()).filter(Boolean)
+        const english_resources = rawResources.length > 0
+          ? rawResources.map(r => {
+              const sepIdx = r.indexOf('::')
+              if (sepIdx > -1) return { name: r.slice(0, sepIdx).trim(), url: r.slice(sepIdx + 2).trim() }
+              return { name: r, url: null }
+            })
+          : getEnglishResources(name)  // fallback to server-side lookup
         return {
           name,
           emoji: parts[1]?.trim() || '🌟',
@@ -364,7 +390,7 @@ export async function POST(request) {
           time: parts[3]?.trim() || '',
           cost: parts[4]?.trim() || '',
           salary: parts[5]?.trim() || '',
-          english_resources: getEnglishResources(name),
+          english_resources,
         }
       })
       .filter(c => c.name)
