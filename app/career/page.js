@@ -50,7 +50,7 @@ const CONCERN_OPTIONS = [
 ]
 
 // ── REQUIRED ASTERISK ─────────────────────────────────────
-const Req = <span style={{ color: '#ef4444', fontSize: '0.75em', marginLeft: '4px' }}>*</span>
+function Req() { return <span style={{ color: '#ef4444', fontSize: '0.75em', marginLeft: '4px' }}>*</span> }
 
 // ── ENGLISH RESOURCES ─────────────────────────────────────
 
@@ -349,7 +349,7 @@ export default function CareerPage() {
 
           {/* 1. 职业 */}
           <div className="form-section">
-            <label className="form-label">在中国从事的职业{Req}</label>
+            <label className="form-label">在中国从事的职业<Req /></label>
             <input className="form-input" type="text"
               placeholder="例如：护士、电工、会计师、厨师"
               value={form.occupation}
@@ -358,7 +358,7 @@ export default function CareerPage() {
 
           {/* 2. 年限 */}
           <div className="form-section">
-            <label className="form-label">从事年限{Req}</label>
+            <label className="form-label">从事年限<Req /></label>
             <div className="radio-grid radio-grid-3">
               {EXPERIENCE_OPTIONS.map(opt => (
                 <div key={opt} style={{ textAlign: 'center' }}
@@ -370,7 +370,7 @@ export default function CareerPage() {
 
           {/* 3. 学历 */}
           <div className="form-section">
-            <label className="form-label">最高学历{Req}</label>
+            <label className="form-label">最高学历<Req /></label>
             <div className="radio-grid radio-grid-4">
               {EDUCATION_OPTIONS.map(opt => (
                 <div key={opt} style={{ textAlign: 'center' }}
@@ -382,7 +382,7 @@ export default function CareerPage() {
 
           {/* 4. 目前状态 */}
           <div className="form-section">
-            <label className="form-label">目前状态{Req}</label>
+            <label className="form-label">目前状态<Req /></label>
             <div className="radio-grid">
               {STATUS_OPTIONS.map(opt => (
                 <div key={opt}
@@ -394,7 +394,7 @@ export default function CareerPage() {
 
           {/* 5. 省份 */}
           <div className="form-section">
-            <label className="form-label">目前所在省份{Req}</label>
+            <label className="form-label">目前所在省份<Req /></label>
             <select className="form-select" value={form.province}
               onChange={e => set('province', e.target.value)}>
               {PROVINCES.map(p => (
@@ -405,7 +405,7 @@ export default function CareerPage() {
 
           {/* 6. 英语 */}
           <div className="form-section">
-            <label className="form-label">英语水平{Req}</label>
+            <label className="form-label">英语水平<Req /></label>
             <div className="radio-grid">
               {ENGLISH_OPTIONS.map(opt => (
                 <div key={opt.value}
@@ -432,7 +432,7 @@ export default function CareerPage() {
 
           {/* 8. 学习方式 */}
           <div className="form-section">
-            <label className="form-label">学习方式{Req}</label>
+            <label className="form-label">学习方式<Req /></label>
             <div className="radio-grid">
               {STUDY_OPTIONS.map(opt => (
                 <div key={opt}
@@ -444,7 +444,7 @@ export default function CareerPage() {
 
           {/* 9. 总周期 */}
           <div className="form-section">
-            <label className="form-label">可接受总周期{Req}</label>
+            <label className="form-label">可接受总周期<Req /></label>
             <div className="radio-grid">
               {TIMELINE_OPTIONS.map(opt => (
                 <div key={opt}
@@ -456,7 +456,7 @@ export default function CareerPage() {
 
           {/* 10. 预算 */}
           <div className="form-section">
-            <label className="form-label">可用预算{Req}</label>
+            <label className="form-label">可用预算<Req /></label>
             <div className="radio-grid radio-grid-3">
               {BUDGET_OPTIONS.map(opt => (
                 <div key={opt} style={{ textAlign: 'center', fontSize: '13px' }}
@@ -468,7 +468,7 @@ export default function CareerPage() {
 
           {/* 11. 顾虑 */}
           <div className="form-section">
-            <label className="form-label">最大的顾虑是什么？{Req}</label>
+            <label className="form-label">最大的顾虑是什么？<Req /></label>
             <div className="radio-grid radio-grid-2">
               {CONCERN_OPTIONS.map(opt => (
                 <div key={opt}
@@ -483,12 +483,12 @@ export default function CareerPage() {
             <div className="contact-section-title">留下联系方式，完整报告发到你邮箱</div>
             <div className="contact-section-sub">完整认证步骤和行动清单将发送至邮箱</div>
             <div className="form-section" style={{ marginBottom: '16px' }}>
-              <label className="form-label">姓名{Req}</label>
+              <label className="form-label">姓名<Req /></label>
               <input className="form-input" type="text" placeholder="你的名字"
                 value={form.name} onChange={e => set('name', e.target.value)} />
             </div>
             <div className="form-section" style={{ marginBottom: '16px' }}>
-              <label className="form-label">邮箱{Req}</label>
+              <label className="form-label">邮箱<Req /></label>
               <input className="form-input" type="email" placeholder="your@email.com"
                 value={form.email} onChange={e => set('email', e.target.value)} />
             </div>

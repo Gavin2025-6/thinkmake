@@ -175,8 +175,12 @@ async function generateAndSend({ userPrompt, name, email, careers, requestId }) 
       const emailResult = await resend.emails.send({
         from: 'CareerPath <onboarding@resend.dev>',
         to: email,
-        subject: `${name}，你的加拿大职业规划报告 🍁`,
+        subject: `你好 ${name}，这是你的加拿大职业规划`,
+        text: `你好 ${name}，感谢使用CareerPath职业规划工具。你的规划报告已生成，请查看HTML版本获取完整内容。`,
         html: buildEmailHtml({ name, careers, full_report }),
+        headers: {
+          'X-Entity-Ref-ID': randomUUID(),
+        },
       })
       console.log('[CareerPath] 邮件发送结果:', JSON.stringify(emailResult))
       jobs.set(requestId, 'sent')
