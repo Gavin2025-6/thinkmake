@@ -110,19 +110,6 @@ function getEnglishResources(englishLevel, careerName) {
   return { fluent: true }
 }
 
-function parseCareers(text) {
-  const match = text.match(/===CAREERS_START===([\s\S]*?)===CAREERS_END===/)
-  if (!match) return []
-  return match[1].trim().split('\n')
-    .filter(line => line.includes('|'))
-    .map(line => {
-      const content = line.replace(/^职业\d+[：:]\s*/, '').trim()
-      const parts = content.split('|').map(s => s.trim())
-      return { name: parts[0] || '', emoji: parts[1] || '🌟', match_reason: parts[2] || '', time: parts[3] || '', cost: parts[4] || '', salary: parts[5] || '' }
-    })
-    .filter(c => c.name)
-}
-
 // ── FORM STATE ─────────────────────────────────────────────
 
 const EMPTY_FORM = {
@@ -191,59 +178,19 @@ export default function CareerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+      const data = await res.json()
+      console.log('[CareerPath] response:', data)
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || '请求失败')
+      if (!res.ok || data.error) {
+        setError(data.error || '分析失败，请稍后重试')
+        setStep('form')
+        return
       }
 
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let fullText = ''
-      let careersFound = false
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue
-          const payload = line.slice(6).trim()
-          if (!payload) continue
-          try {
-            const data = JSON.parse(payload)
-
-            if (data.error) {
-              setError(data.error || '分析失败，请稍后重试')
-              setStep('form')
-              return
-            }
-
-            if (data.full) {
-              fullText = data.full
-              if (!careersFound && fullText.includes('===CAREERS_END===')) {
-                careersFound = true
-                const parsed = parseCareers(fullText)
-                if (parsed.length > 0) {
-                  clearInterval(loadingTimerRef.current)
-                  setCareers(parsed)
-                  setStep('result')
-                }
-              }
-            }
-
-            if (data.done) {
-              setEmailStatus(data.email_sent ? 'sent' : 'failed')
-              if (!careersFound) {
-                const parsed = parseCareers(fullText)
-                setCareers(parsed)
-                setStep('result')
-              }
-            }
-          } catch { /* skip malformed lines */ }
-        }
-      }
+      clearInterval(loadingTimerRef.current)
+      setCareers(data.careers || [])
+      setEmailStatus(data.email_sent ? 'sent' : 'failed')
+      setStep('result')
     } catch (err) {
       console.error('[CareerPath] error:', err)
       setError(err.message || '分析失败，请稍后重试')

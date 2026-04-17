@@ -3,66 +3,34 @@ import { randomUUID } from 'crypto'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
-// ── SYSTEM PROMPT ──────────────────────────────────────────
+// ── SYSTEM PROMPT (concise) ────────────────────────────────
 
-const SYSTEM_PROMPT = `你是专门帮助中国新移民规划加拿大职业路径的顾问。
+const SYSTEM_PROMPT = `你是加拿大华人新移民职业规划顾问。
 
-【推荐规则 — 严格执行】
-第一步：分析用户职业背后的核心可迁移技能（是能力，不是职业名称）
-  例如：汽车销售 → 大额谈判、客户关系管理、销售成交
-  例如：护士 → 医疗护理知识、患者沟通、应急处置
-  例如：厨师 → 食品制作、食品安全管理、团队协调
-  例如：会计 → 财务分析、数据处理、合规意识
+推荐规则（严格执行）：
+1. 先分析职业背后的核心可迁移技能（是能力，不是职业名称）
+2. 推荐3个职业：第一个技能完全对口，第二个技能高度迁移，第三个结合其他优势
+3. G驾照只作辅助说明；除非用户是驾驶/运输行业，否则不推荐驾驶类职业
+4. match_reason必须说明具体技能匹配点，不能泛泛而谈
 
-第二步：推荐恰好3个职业：
-  - 第一个：核心技能完全匹配，入行最快
-  - 第二个：技能高度可迁移，发展空间更大
-  - 第三个：部分技能迁移，结合学历/预算/英语优势
+分析维度：
+- 学历：本科+→高门槛职业(RN/CPA/工程师)；大专→中等认证(RPN/ECE)；高中→技工学徒
+- 年限8年+：提示Trade Equivalency Assessment可免部分学徒时间
+- 省份安大略：给具体认证机构+官网链接+费用；其他省：给方向+当地机构链接
+- 英语基础：推中文考试选项；中等：说明英语要求；流利：说明英语优势
+- 预算不足：给分阶段方案，说明第一步只需多少钱
+- 顾虑：每一条都要在报告里直接回应
 
-第三步：禁止规则
-  - 禁止推荐与核心技能完全无关的职业
-  - G驾照只作辅助说明（如"有G驾照方便带客户看房"），不作推荐主要依据
-  - 除非用户职业本身是运输/驾驶相关，否则不推荐卡车司机/驾校教练等驾驶类职业
-  - match_reason必须说明具体技能匹配点，不能泛泛而谈
-
-【分析规则】
-1. 学历：硕士/本科→RN、CPA、工程师；大专→RPN、ECE；高中→技工学徒
-2. 工作年限：8年以上→提示Trade Equivalency Assessment（可免部分学徒时间）
-3. 目前状态：还没来→来之前准备清单；刚到6个月→立即行动方案；已在1年+→直接进阶建议
-4. 学习+周期：全职+1年内→只推短认证；兼职+1-3年→弹性课程；极度有限→在线碎片化
-5. 省份：安大略→详细机构+步骤+费用+官网链接；其他省→方向建议+当地机构链接
-6. 英语：基础→推中文考试选项；中等→提示哪些环节需英语；流利→说明额外机会
-7. 预算：不够→分阶段方案，说明第一步只需多少；够→说明备选路径
-8. 顾虑：每个顾虑都在报告里直接回应
-
-【输出格式 — 严格按此结构，不要JSON，不要其他格式】
+输出格式（严格按此结构，不要JSON，不要markdown代码块）：
 
 ===CAREERS_START===
-职业1：{职业名中英文}|{一个emoji}|{一句话匹配原因，必须提到用户的具体背景}|{预计认证时间}|{总费用范围}|{安省年薪范围}
-职业2：{职业名中英文}|{一个emoji}|{一句话匹配原因，必须提到用户的具体背景}|{预计认证时间}|{总费用范围}|{安省年薪范围}
-职业3：{职业名中英文}|{一个emoji}|{一句话匹配原因，必须提到用户的具体背景}|{预计认证时间}|{总费用范围}|{安省年薪范围}
+职业1：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
+职业2：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
+职业3：名称中英文|emoji|匹配原因（必须提及用户具体背景）|预计时间|费用范围|安省年薪
 ===CAREERS_END===
 
 ===REPORT_START===
-# 你的加拿大职业规划报告
-
-## 一、推荐职业方向
-
-（每个职业详细展开：为什么推荐/认证机构+官网链接/认证步骤/时间线/费用明细/年薪范围）
-
-## 二、针对你的英语水平的建议
-
-## 三、针对你的预算的规划
-
-## 四、关于你的顾虑
-
-## 五、第一步行动清单
-
-（3条这周就可以执行的具体行动）
-
-## 六、免责声明
-
-以上信息仅供参考，具体要求请以各认证机构官方网站最新公告为准。
+（完整markdown报告，包含：一、每个职业的认证机构+步骤+费用明细+年薪；二、英语建议；三、预算规划；四、顾虑回应；五、本周行动清单3条；六、免责声明）
 ===REPORT_END===
 
 全程简体中文。`
@@ -77,44 +45,16 @@ function buildUserPrompt(body) {
   const skillsStr = Array.isArray(skills) && skills.length > 0 ? skills.join('、') : '未选择'
   return `用户背景：
 - 姓名：${name}
-- 在中国的职业：${occupation}
-- 从事年限：${experience_years}
-- 最高学历：${education}
-- 目前状态：${current_status}
-- 所在省份：${province}
-- 英语水平：${english}
-- 相关技能经验：${skillsStr}
-- 学习方式：${study_mode}
-- 可接受总周期：${total_timeline}
-- 可用预算：${budget}
-- 最大顾虑：${concern}
-
-请按指定格式生成职业规划报告。`
-}
-
-function parseCareers(fullText) {
-  const match = fullText.match(/===CAREERS_START===([\s\S]*?)===CAREERS_END===/)
-  if (!match) return []
-  return match[1].trim().split('\n')
-    .filter(line => line.includes('|'))
-    .map(line => {
-      const content = line.replace(/^职业\d+[：:]\s*/, '').trim()
-      const parts = content.split('|').map(s => s.trim())
-      return {
-        name: parts[0] || '',
-        emoji: parts[1] || '🌟',
-        match_reason: parts[2] || '',
-        time: parts[3] || '',
-        cost: parts[4] || '',
-        salary: parts[5] || '',
-      }
-    })
-    .filter(c => c.name)
-}
-
-function parseReport(fullText) {
-  const match = fullText.match(/===REPORT_START===([\s\S]*?)===REPORT_END===/)
-  return match ? match[1].trim() : fullText
+- 职业：${occupation}，从事${experience_years}
+- 学历：${education}
+- 状态：${current_status}
+- 省份：${province}
+- 英语：${english}
+- 技能：${skillsStr}
+- 学习：${study_mode}
+- 周期：${total_timeline}
+- 预算：${budget}
+- 顾虑：${concern}`
 }
 
 function mdToEmailHtml(md) {
@@ -137,7 +77,7 @@ function mdToEmailHtml(md) {
 function buildEmailHtml({ name, careers, full_report }) {
   const careerHtml = careers.map(c => `
     <div style="background:#f9fafb;border-radius:10px;padding:16px 18px;margin-bottom:10px;border:1px solid #e5e7eb">
-      <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:5px">${c.emoji} ${c.name}</div>
+      <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:5px">${c.emoji || ''} ${c.name}</div>
       <div style="font-size:13px;color:#6b7280;margin-bottom:10px;line-height:1.5">${c.match_reason}</div>
       <div style="font-size:13px;color:#374151">
         <span style="margin-right:16px">⏱ ${c.time}</span>
@@ -179,13 +119,11 @@ function buildEmailHtml({ name, careers, full_report }) {
 </html>`
 }
 
-async function sendEmail(body, fullText) {
+async function sendEmail(body, careers, full_report) {
   if (!resend) { console.log('[CareerPath] Resend未初始化'); return false }
   try {
     const { name, email } = body
-    const careers = parseCareers(fullText)
-    const full_report = parseReport(fullText)
-    console.log('[CareerPath] 发送邮件到:', email, '职业数:', careers.length)
+    console.log('[CareerPath] 发送邮件到:', email)
     const result = await resend.emails.send({
       from: 'CareerPath <onboarding@resend.dev>',
       to: email,
@@ -194,10 +132,10 @@ async function sendEmail(body, fullText) {
       html: buildEmailHtml({ name, careers, full_report }),
       headers: { 'X-Entity-Ref-ID': randomUUID() },
     })
-    console.log('[CareerPath] 邮件发送结果:', JSON.stringify(result))
+    console.log('[CareerPath] 邮件结果:', JSON.stringify(result))
     return true
   } catch (err) {
-    console.error('[CareerPath] 邮件发送失败:', err)
+    console.error('[CareerPath] 邮件失败:', err)
     return false
   }
 }
@@ -212,78 +150,68 @@ export async function POST(request) {
     timestamp: new Date().toISOString(),
     name, email, phone: phone || '', occupation, province,
   }))
+  console.log('[CareerPath] System prompt长度:', SYSTEM_PROMPT.length)
+  console.log('[CareerPath] User prompt长度:', buildUserPrompt(body).length)
 
-  const encoder = new TextEncoder()
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 3000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: buildUserPrompt(body) }],
+      }),
+    })
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 4000,
-            stream: true,
-            system: SYSTEM_PROMPT,
-            messages: [{ role: 'user', content: buildUserPrompt(body) }],
-          }),
-        })
+    console.log('[CareerPath] API status:', response.status)
 
-        if (!response.ok) {
-          const err = await response.json()
-          throw new Error(JSON.stringify(err))
+    if (!response.ok) {
+      const errText = await response.text()
+      console.error('[CareerPath] API error:', errText.slice(0, 300))
+      throw new Error(errText.slice(0, 200))
+    }
+
+    const data = await response.json()
+    const text = data.content[0].text
+    console.log('[CareerPath] Response length:', text.length)
+
+    // Parse careers
+    const careersMatch = text.match(/===CAREERS_START===([\s\S]*?)===CAREERS_END===/)
+    const reportMatch = text.match(/===REPORT_START===([\s\S]*?)===REPORT_END===/)
+
+    const careersRaw = careersMatch?.[1]?.trim() || ''
+    const full_report = reportMatch?.[1]?.trim() || text
+
+    const careers = careersRaw.split('\n')
+      .filter(line => line.trim() && line.includes('|'))
+      .map(line => {
+        const parts = line.replace(/^职业\d+[：:]\s*/, '').split('|')
+        return {
+          name: parts[0]?.trim() || '',
+          emoji: parts[1]?.trim() || '🌟',
+          match_reason: parts[2]?.trim() || '',
+          time: parts[3]?.trim() || '',
+          cost: parts[4]?.trim() || '',
+          salary: parts[5]?.trim() || '',
         }
+      })
+      .filter(c => c.name)
 
-        const reader = response.body.getReader()
-        let fullText = ''
+    console.log('[CareerPath] 解析职业数:', careers.length)
 
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
+    // Send email (non-blocking)
+    const email_sent = await sendEmail(body, careers, full_report)
 
-          const chunk = new TextDecoder().decode(value)
-          for (const line of chunk.split('\n')) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.type === 'content_block_delta') {
-                const text = data.delta?.text || ''
-                fullText += text
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ text, full: fullText })}\n\n`)
-                )
-              }
-            } catch { /* skip malformed lines */ }
-          }
-        }
+    return Response.json({ careers, email_sent })
 
-        // Stream complete — send email
-        const emailSent = await sendEmail(body, fullText)
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ done: true, email_sent: emailSent })}\n\n`)
-        )
-        controller.close()
-
-      } catch (error) {
-        console.error('[CareerPath] stream error:', error)
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: error.message })}\n\n`)
-        )
-        controller.close()
-      }
-    },
-  })
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
+  } catch (error) {
+    console.error('[CareerPath] Error:', error.message)
+    return Response.json({ error: error.message }, { status: 500 })
+  }
 }
