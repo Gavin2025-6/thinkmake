@@ -79,6 +79,23 @@ function safeExtract(data) {
   return { careers, fullReport: fr }
 }
 
+// ── CAREER EMOJI MAP ──────────────────────────────────────
+
+function getCareerEmoji(name = '') {
+  const n = name.toLowerCase()
+  if (n.includes('护士') || n.includes('nurse') || n.includes('医')) return '🏥'
+  if (n.includes('电工') || n.includes('electrician') || n.includes('水管') || n.includes('plumb')) return '🔧'
+  if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) return '📊'
+  if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) return '🏠'
+  if (n.includes('汽车') || n.includes('automotive') || n.includes('车')) return '🚗'
+  if (n.includes('厨') || n.includes('chef') || n.includes('cook') || n.includes('餐')) return '👨‍🍳'
+  if (n.includes('金融') || n.includes('finance') || n.includes('投资')) return '📈'
+  if (n.includes('教') || n.includes('teacher') || n.includes('ece') || n.includes('幼')) return '👩‍🏫'
+  if (n.includes('it') || n.includes('tech') || n.includes('程序') || n.includes('软件')) return '💻'
+  if (n.includes('保险') || n.includes('insurance')) return '🛡️'
+  return '🌟'
+}
+
 // ── MAIN COMPONENT ─────────────────────────────────────────
 
 const EMPTY_FORM = {
@@ -159,64 +176,101 @@ export default function CareerPage() {
   if (step === 'result' && result) {
     const { careers, fullReport } = safeExtract(result)
     const emailFailed = result.email_failed
+    const yearsLabel = form.experience_years || '多年'
+
+    function viewDetail() {
+      setExpanded(true)
+      setTimeout(() => {
+        document.getElementById('full-report')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 80)
+    }
 
     return (
       <div className="career-page">
-        <div className="result-banner">
-          <div className="result-banner-title">✓ {form.name}，你的职业规划已生成</div>
-          <div className="result-banner-sub">
-            {emailFailed
-              ? '报告已生成（邮件发送失败，请截图保存）'
-              : `完整报告已发送至 ${form.email}，请查收`}
+
+        {/* ── HERO ── */}
+        <div className="result-hero">
+          <div className="result-hero-inner">
+            <div className="result-hero-title">
+              {form.name}，你的{yearsLabel}经验<br />在加拿大很值钱
+            </div>
+            <div className="result-hero-sub">
+              我们找到了 {careers.length || '数条'} 条适合你的职业路径
+            </div>
+            <div className={`result-email-badge${emailFailed ? ' result-email-badge-warn' : ''}`}>
+              {emailFailed
+                ? '⚠ 邮件发送失败，请截图保存'
+                : `✓ 报告已发送至 ${form.email}`}
+            </div>
           </div>
         </div>
 
-        <div className="career-container">
-          {careers.length > 0 && (
-            <>
-              <div className="section-label-sm">推荐职业方向</div>
-              <div className="career-cards-grid">
-                {careers.map((c, i) => (
-                  <div key={i} className="career-summary-card">
-                    <div className="career-summary-name">{c.name}</div>
-                    <div className="career-summary-reason">{c.match_reason}</div>
-                    <div className="career-data-row">
-                      <span className="career-data-item">⏱&nbsp;{c.time}</span>
-                      <span className="career-data-item">💰&nbsp;{c.cost}</span>
-                      <span className="career-data-item">💵&nbsp;{c.salary}</span>
-                    </div>
+        {/* ── CAREER CARDS ── */}
+        {careers.length > 0 && (
+          <div className="result-cards-section">
+            <div className="result-section-label">推荐职业方向</div>
+            <div className="result-career-grid">
+              {careers.map((c, i) => (
+                <div key={i} className="result-career-card">
+                  <div className="result-career-emoji">{getCareerEmoji(c.name)}</div>
+                  <div className="result-career-name">{c.name}</div>
+                  <div className="result-career-reason">{c.match_reason}</div>
+                  <div className="result-career-data">
+                    <span className="result-career-data-item">⏱ {c.time}</span>
+                    <span className="result-career-data-item">💰 {c.cost}</span>
+                    <span className="result-career-data-item">📈 {c.salary}</span>
                   </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          <hr className="section-divider" />
-          <button className="expand-btn" onClick={() => setExpanded(v => !v)}>
-            {expanded ? '收起报告 ↑' : '展开完整报告 ↓'}
-          </button>
-
-          {expanded && fullReport && (
-            <div className="result-content">
-              <ReactMarkdown
-                components={{
-                  a: ({ href, children, ...props }) => (
-                    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-                      {children}
-                    </a>
-                  ),
-                }}
-              >
-                {fullReport}
-              </ReactMarkdown>
+                  <button className="result-career-cta" onClick={viewDetail}>
+                    查看详细路径 →
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
-
-          <div className="result-actions">
-            <button className="btn-secondary" onClick={resetForm}>重新规划</button>
           </div>
+        )}
 
-          <div className="result-sources">
+        {/* ── ENCOURAGEMENT ── */}
+        <div className="result-encouragement">
+          <div className="result-enc-icon">🍁</div>
+          <div className="result-enc-text">
+            "在加拿大重新开始，不代表从零开始。<br />
+            你带来的每一年经验，都是这里稀缺的财富。"
+          </div>
+          <div className="result-enc-credit">— CareerPath AI</div>
+        </div>
+
+        {/* ── FULL REPORT ── */}
+        <div className="result-report-section" id="full-report">
+          <div className="result-report-container">
+            <div className="result-section-header">
+              <h2 className="result-section-title">你的详细规划路径</h2>
+              <button className="expand-btn-sm" onClick={() => setExpanded(v => !v)}>
+                {expanded ? '收起 ↑' : '展开完整报告 ↓'}
+              </button>
+            </div>
+
+            {expanded && fullReport && (
+              <div className="result-content">
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => (
+                      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {fullReport}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── BOTTOM ── */}
+        <div className="result-bottom">
+          <button className="btn-outline" onClick={resetForm}>重新规划</button>
+          <div className="result-sources-row">
             数据来源：&nbsp;
             <a href="https://www.skilledtradesontario.ca" target="_blank" rel="noopener">Skilled Trades Ontario</a>
             &nbsp;·&nbsp;
@@ -229,6 +283,7 @@ export default function CareerPage() {
             <a href="https://www.jobbank.gc.ca" target="_blank" rel="noopener">Job Bank Canada</a>
           </div>
         </div>
+
       </div>
     )
   }
