@@ -96,9 +96,11 @@ export default function CareerPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [careers, setCareers] = useState([])
   const [emailStatus, setEmailStatus] = useState('pending')  // pending | sent | failed
+  const [jobId, setJobId] = useState(null)
   const [error, setError] = useState('')
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
   const loadingTimerRef = useRef(null)
+  const pollTimerRef = useRef(null)
 
   // Rotate loading messages every 3s
   useEffect(() => {
@@ -109,6 +111,22 @@ export default function CareerPage() {
     }
     return () => clearInterval(loadingTimerRef.current)
   }, [step])
+
+  // Poll for email status when jobId is set
+  useEffect(() => {
+    if (!jobId || step !== 'result') return
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/career/status?id=${jobId}`)
+        const data = await res.json()
+        if (data.status === 'sent' || data.status === 'failed') {
+          setEmailStatus(data.status)
+          clearInterval(pollTimerRef.current)
+        }
+      } catch (_) {}
+    }, 5000)
+    return () => clearInterval(pollTimerRef.current)
+  }, [jobId, step])
 
   function set(key, value) { setForm(prev => ({ ...prev, [key]: value })) }
 
@@ -159,7 +177,8 @@ export default function CareerPage() {
 
       clearInterval(loadingTimerRef.current)
       setCareers(data.careers || [])
-      setEmailStatus(data.email_sent ? 'sent' : 'failed')
+      setJobId(data.jobId || null)
+      setEmailStatus('pending')
       setStep('result')
     } catch (err) {
       console.error('[CareerPath] error:', err)
@@ -170,8 +189,9 @@ export default function CareerPage() {
 
   function resetForm() {
     clearInterval(loadingTimerRef.current)
+    clearInterval(pollTimerRef.current)
     setStep('form'); setCareers([]); setEmailStatus('pending')
-    setError(''); setLoadingMsgIdx(0)
+    setJobId(null); setError(''); setLoadingMsgIdx(0)
     setForm(EMPTY_FORM)
   }
 
@@ -190,7 +210,7 @@ export default function CareerPage() {
   // ── RESULT ──
   if (step === 'result') {
     const emailBadgeText = emailStatus === 'sent'
-      ? '✓ 报告已发至邮箱'
+      ? `✓ 报告已发至 ${form.email}`
       : emailStatus === 'failed'
       ? '⚠ 邮件发送失败，请截图保存'
       : '⏳ 完整报告生成中，稍后发至邮箱'
