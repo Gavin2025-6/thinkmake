@@ -49,63 +49,18 @@ const CONCERN_OPTIONS = [
   '其他',
 ]
 
-// ── REQUIRED ASTERISK ─────────────────────────────────────
-function Req() { return <span style={{ color: '#ef4444', fontSize: '0.75em', marginLeft: '4px' }}>*</span> }
+const LOADING_MESSAGES = [
+  '正在分析你的职业背景...',
+  '正在匹配加拿大认证路径...',
+  '正在计算时间和费用...',
+  '正在生成你的专属报告...',
+]
 
-// ── ENGLISH RESOURCES ─────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────
 
-function getEnglishResources(englishLevel, careerName) {
-  const n = (careerName || '').toLowerCase()
-
-  let vocabHint = '学习该行业专业词汇，建立职场英语基础'
-  if (n.includes('保险') || n.includes('insurance')) vocabHint = '重点学习LLQP考试词汇（支持中文应考，英语压力小）'
-  else if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) vocabHint = '学习OREA课程术语，掌握合同和法律词汇'
-  else if (n.includes('护士') || n.includes('nurse') || n.includes('医')) vocabHint = '学习医疗英语：病历记录、用药沟通、患者交流术语'
-  else if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) vocabHint = '学习财务英语：审计、税务、财务报表专业词汇'
-  else if (n.includes('电工') || n.includes('electrician') || n.includes('水管') || n.includes('plumb')) vocabHint = '学习技工英语：图纸阅读、安全规范、操作手册'
-  else if (n.includes('厨') || n.includes('chef') || n.includes('cook') || n.includes('餐')) vocabHint = '学习餐饮英语：菜单写作、食品安全法规术语'
-
-  if (englishLevel === '基础') {
-    return {
-      title: '📚 英语提升建议',
-      items: [
-        { text: '多伦多公共图书馆 · 免费ESL课程', url: 'https://www.tpl.ca/programs-and-events/learning/english-language-learning' },
-        { text: 'Settlement.org · 免费语言培训资源', url: 'https://settlement.org/ontario/education/english-as-a-second-language-esl/' },
-        { text: vocabHint, url: null },
-      ],
-    }
-  }
-
-  if (englishLevel === '中等') {
-    let yt = '搜索该行业英文YouTube频道，跟进行业最新资讯'
-    let free = '查看行业协会官网的免费学习资源和备考材料'
-    if (n.includes('保险') || n.includes('insurance')) {
-      yt = 'YouTube: "Insurance School of Canada" 频道'
-      free = 'FSRA 官网 · 免费备考指引与样题'
-    } else if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) {
-      yt = 'YouTube: 搜索 "OREA real estate exam" 相关频道'
-      free = 'RECO 官网 · 免费入门课程与考试大纲'
-    } else if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) {
-      yt = 'YouTube: "CPA Canada" 官方频道'
-      free = 'CPA Ontario 官网 · 免费备考资源包'
-    } else if (n.includes('护士') || n.includes('nurse') || n.includes('医')) {
-      yt = 'YouTube: "Nurse Sarah" / "Simple Nursing" 频道'
-      free = 'CNO 官网 · 注册流程与英语要求详解'
-    }
-    return {
-      title: '📺 行业英语资源',
-      items: [
-        { text: yt, url: null },
-        { text: free, url: null },
-      ],
-    }
-  }
-
-  // 流利 — no dropdown, show inline note
-  return { fluent: true }
+function Req() {
+  return <span style={{ color: '#ef4444', fontSize: '0.75em', marginLeft: '4px' }}>*</span>
 }
-
-// ── CAREER EMOJI MAP ──────────────────────────────────────
 
 function getCareerEmoji(name = '', emojiFromApi = '') {
   if (emojiFromApi) return emojiFromApi
@@ -123,7 +78,52 @@ function getCareerEmoji(name = '', emojiFromApi = '') {
   return '🌟'
 }
 
-// ── MAIN COMPONENT ─────────────────────────────────────────
+function getEnglishResources(englishLevel, careerName) {
+  const n = (careerName || '').toLowerCase()
+  let vocabHint = '学习该行业专业词汇，建立职场英语基础'
+  if (n.includes('保险') || n.includes('insurance')) vocabHint = '重点学习LLQP考试词汇（支持中文应考，英语压力小）'
+  else if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) vocabHint = '学习OREA课程术语，掌握合同和法律词汇'
+  else if (n.includes('护士') || n.includes('nurse') || n.includes('医')) vocabHint = '学习医疗英语：病历记录、用药沟通、患者交流术语'
+  else if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) vocabHint = '学习财务英语：审计、税务、财务报表专业词汇'
+  else if (n.includes('电工') || n.includes('electrician') || n.includes('水管')) vocabHint = '学习技工英语：图纸阅读、安全规范、操作手册'
+  else if (n.includes('厨') || n.includes('chef') || n.includes('cook') || n.includes('餐')) vocabHint = '学习餐饮英语：菜单写作、食品安全法规术语'
+
+  if (englishLevel === '基础') {
+    return {
+      title: '📚 英语提升建议',
+      items: [
+        { text: '多伦多公共图书馆 · 免费ESL课程', url: 'https://www.tpl.ca/programs-and-events/learning/english-language-learning' },
+        { text: 'Settlement.org · 免费语言培训资源', url: 'https://settlement.org/ontario/education/english-as-a-second-language-esl/' },
+        { text: vocabHint, url: null },
+      ],
+    }
+  }
+  if (englishLevel === '中等') {
+    let yt = '搜索该行业英文YouTube频道，跟进行业最新资讯'
+    let free = '查看行业协会官网的免费学习资源和备考材料'
+    if (n.includes('保险') || n.includes('insurance')) { yt = 'YouTube: "Insurance School of Canada"'; free = 'FSRA 官网 · 免费备考指引与样题' }
+    else if (n.includes('房地产') || n.includes('real estate')) { yt = 'YouTube: 搜索 "OREA real estate exam"'; free = 'RECO 官网 · 免费入门课程与考试大纲' }
+    else if (n.includes('会计') || n.includes('cpa')) { yt = 'YouTube: "CPA Canada" 官方频道'; free = 'CPA Ontario 官网 · 免费备考资源包' }
+    else if (n.includes('护士') || n.includes('nurse')) { yt = 'YouTube: "Nurse Sarah" / "Simple Nursing"'; free = 'CNO 官网 · 注册流程与英语要求详解' }
+    return { title: '📺 行业英语资源', items: [{ text: yt, url: null }, { text: free, url: null }] }
+  }
+  return { fluent: true }
+}
+
+function parseCareers(text) {
+  const match = text.match(/===CAREERS_START===([\s\S]*?)===CAREERS_END===/)
+  if (!match) return []
+  return match[1].trim().split('\n')
+    .filter(line => line.includes('|'))
+    .map(line => {
+      const content = line.replace(/^职业\d+[：:]\s*/, '').trim()
+      const parts = content.split('|').map(s => s.trim())
+      return { name: parts[0] || '', emoji: parts[1] || '🌟', match_reason: parts[2] || '', time: parts[3] || '', cost: parts[4] || '', salary: parts[5] || '' }
+    })
+    .filter(c => c.name)
+}
+
+// ── FORM STATE ─────────────────────────────────────────────
 
 const EMPTY_FORM = {
   occupation: '', experience_years: '', education: '', current_status: '',
@@ -131,35 +131,29 @@ const EMPTY_FORM = {
   budget: '', concern: '', name: '', email: '', phone: '',
 }
 
+// ── MAIN COMPONENT ─────────────────────────────────────────
+
 export default function CareerPage() {
-  const [step, setStep] = useState('form')
+  const [step, setStep] = useState('form')          // form | loading | result
   const [form, setForm] = useState(EMPTY_FORM)
   const [careers, setCareers] = useState([])
-  const [requestId, setRequestId] = useState(null)
-  const [emailStatus, setEmailStatus] = useState('pending') // pending | sent | failed
+  const [emailStatus, setEmailStatus] = useState('pending')  // pending | sent | failed
   const [error, setError] = useState('')
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
   const [expandedEnglish, setExpandedEnglish] = useState({})
-  const pollRef = useRef(null)
+  const loadingTimerRef = useRef(null)
 
-  // ── POLLING ──
+  // Rotate loading messages every 3s
   useEffect(() => {
-    if (step !== 'result' || !requestId) return
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/career/status?id=${requestId}`)
-        const data = await res.json()
-        if (data.status === 'sent' || data.status === 'failed') {
-          setEmailStatus(data.status)
-          clearInterval(pollRef.current)
-        }
-      } catch { /* ignore poll errors */ }
-    }, 3000)
-    return () => clearInterval(pollRef.current)
-  }, [step, requestId])
+    if (step === 'loading') {
+      loadingTimerRef.current = setInterval(() => {
+        setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length)
+      }, 3000)
+    }
+    return () => clearInterval(loadingTimerRef.current)
+  }, [step])
 
-  function set(key, value) {
-    setForm(prev => ({ ...prev, [key]: value }))
-  }
+  function set(key, value) { setForm(prev => ({ ...prev, [key]: value })) }
 
   function toggleSkill(skill) {
     setForm(prev => ({
@@ -178,44 +172,89 @@ export default function CareerPage() {
       'budget', 'concern', 'name', 'email',
     ]
     const missing = required.filter(k => !form[k])
-    console.log('[CareerPath] submit triggered, missing fields:', missing, 'form:', form)
     if (missing.length > 0) {
-      setError('请填写所有必填字段：' + missing.join(', '))
+      setError('请填写所有必填字段')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
     if (!form.email.includes('@')) { setError('请输入有效的邮箱地址'); return }
+
     setError('')
     setStep('loading')
+    setLoadingMsgIdx(0)
+    setCareers([])
+    setEmailStatus('pending')
+
     try {
       const res = await fetch('/api/career', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      const data = await res.json()
-      console.log('[CareerPath] response:', data)
-      console.log('[CareerPath] careers:', data?.careers)
-      if (!res.ok || data.error) {
-        setError(data.error || '分析失败，请稍后重试')
-        setStep('form')
-        return
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || '请求失败')
       }
-      setCareers(data.careers || [])
-      setRequestId(data.requestId)
-      setEmailStatus('pending')
-      setStep('result')
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let careersFound = false
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const payload = line.slice(6).trim()
+          if (!payload) continue
+          try {
+            const data = JSON.parse(payload)
+
+            if (data.error) {
+              setError(data.error || '分析失败，请稍后重试')
+              setStep('form')
+              return
+            }
+
+            if (data.full) {
+              fullText = data.full
+              if (!careersFound && fullText.includes('===CAREERS_END===')) {
+                careersFound = true
+                const parsed = parseCareers(fullText)
+                if (parsed.length > 0) {
+                  clearInterval(loadingTimerRef.current)
+                  setCareers(parsed)
+                  setStep('result')
+                }
+              }
+            }
+
+            if (data.done) {
+              setEmailStatus(data.email_sent ? 'sent' : 'failed')
+              if (!careersFound) {
+                const parsed = parseCareers(fullText)
+                setCareers(parsed)
+                setStep('result')
+              }
+            }
+          } catch { /* skip malformed lines */ }
+        }
+      }
     } catch (err) {
-      console.error('[CareerPath] fetch error:', err)
-      setError('分析失败，请稍后重试')
+      console.error('[CareerPath] error:', err)
+      setError(err.message || '分析失败，请稍后重试')
       setStep('form')
     }
   }
 
   function resetForm() {
-    clearInterval(pollRef.current)
-    setStep('form'); setCareers([]); setRequestId(null)
-    setEmailStatus('pending'); setError('')
+    clearInterval(loadingTimerRef.current)
+    setStep('form'); setCareers([]); setEmailStatus('pending')
+    setError(''); setLoadingMsgIdx(0); setExpandedEnglish({})
     setForm(EMPTY_FORM)
   }
 
@@ -225,7 +264,7 @@ export default function CareerPage() {
       <div className="career-page">
         <div className="loading-wrap">
           <div className="spinner" />
-          <p>正在分析你的背景...</p>
+          <p className="loading-msg">{LOADING_MESSAGES[loadingMsgIdx]}</p>
         </div>
       </div>
     )
@@ -238,7 +277,6 @@ export default function CareerPage() {
       : emailStatus === 'failed'
       ? '⚠ 邮件发送失败，请截图保存'
       : '⏳ 完整报告生成中，稍后发至邮箱'
-
     const emailBadgeClass = emailStatus === 'sent'
       ? 'res-email-tag'
       : emailStatus === 'failed'
@@ -248,16 +286,12 @@ export default function CareerPage() {
     return (
       <div className="career-page">
 
-        {/* ── HEADER BAR ── */}
         <div className="res-header">
-          <div className="res-header-meta">
-            {form.name} · {form.province} · {form.occupation}
-          </div>
+          <div className="res-header-meta">{form.name} · {form.province} · {form.occupation}</div>
           <div className="res-header-sub">根据你的背景，以下是最匹配的职业方向</div>
           <div className={emailBadgeClass}>{emailBadgeText}</div>
         </div>
 
-        {/* ── CAREER CARDS ── */}
         <div className="res-cards-wrap">
           {careers.length > 0 ? (
             <div className="res-cards-grid">
@@ -276,10 +310,8 @@ export default function CareerPage() {
                     </div>
                     {engRes && !engRes.fluent && (
                       <div className="res-eng-section">
-                        <button
-                          className="res-eng-toggle"
-                          onClick={() => setExpandedEnglish(prev => ({ ...prev, [i]: !prev[i] }))}
-                        >
+                        <button className="res-eng-toggle"
+                          onClick={() => setExpandedEnglish(prev => ({ ...prev, [i]: !prev[i] }))}>
                           {engRes.title} {isOpen ? '↑' : '↓'}
                         </button>
                         {isOpen && (
@@ -296,35 +328,26 @@ export default function CareerPage() {
                       </div>
                     )}
                     {engRes?.fluent && (
-                      <div className="res-eng-fluent">
-                        ✓ 英语优势：可直接参加全英文培训课程
-                      </div>
+                      <div className="res-eng-fluent">✓ 英语优势：可直接参加全英文培训课程</div>
                     )}
                   </div>
                 )
               })}
             </div>
           ) : (
-            <div className="res-empty">
-              数据解析失败，请查收邮件中的完整报告
-            </div>
+            <div className="res-empty">数据解析失败，请查收邮件中的完整报告</div>
           )}
         </div>
 
-        {/* ── BOTTOM ── */}
         <div className="res-bottom">
           <p className="res-bottom-note">完整认证步骤和行动清单将发送至你的邮箱</p>
           <button className="btn-outline" onClick={resetForm}>重新规划</button>
           <div className="res-sources">
             <a href="https://www.skilledtradesontario.ca" target="_blank" rel="noopener">Skilled Trades Ontario</a>
-            &nbsp;·&nbsp;
-            <a href="https://www.cno.org" target="_blank" rel="noopener">CNO</a>
-            &nbsp;·&nbsp;
-            <a href="https://www.cpaontario.ca" target="_blank" rel="noopener">CPA Ontario</a>
-            &nbsp;·&nbsp;
-            <a href="https://www.fsrao.ca" target="_blank" rel="noopener">FSRA</a>
-            &nbsp;·&nbsp;
-            <a href="https://www.jobbank.gc.ca" target="_blank" rel="noopener">Job Bank Canada</a>
+            &nbsp;·&nbsp;<a href="https://www.cno.org" target="_blank" rel="noopener">CNO</a>
+            &nbsp;·&nbsp;<a href="https://www.cpaontario.ca" target="_blank" rel="noopener">CPA Ontario</a>
+            &nbsp;·&nbsp;<a href="https://www.fsrao.ca" target="_blank" rel="noopener">FSRA</a>
+            &nbsp;·&nbsp;<a href="https://www.jobbank.gc.ca" target="_blank" rel="noopener">Job Bank Canada</a>
           </div>
         </div>
 
@@ -347,16 +370,13 @@ export default function CareerPage() {
         <p className="form-required-note">* 为必填项</p>
         <form onSubmit={handleSubmit}>
 
-          {/* 1. 职业 */}
           <div className="form-section">
             <label className="form-label">在中国从事的职业<Req /></label>
             <input className="form-input" type="text"
               placeholder="例如：护士、电工、会计师、厨师"
-              value={form.occupation}
-              onChange={e => set('occupation', e.target.value)} />
+              value={form.occupation} onChange={e => set('occupation', e.target.value)} />
           </div>
 
-          {/* 2. 年限 */}
           <div className="form-section">
             <label className="form-label">从事年限<Req /></label>
             <div className="radio-grid radio-grid-3">
@@ -368,7 +388,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 3. 学历 */}
           <div className="form-section">
             <label className="form-label">最高学历<Req /></label>
             <div className="radio-grid radio-grid-4">
@@ -380,7 +399,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 4. 目前状态 */}
           <div className="form-section">
             <label className="form-label">目前状态<Req /></label>
             <div className="radio-grid">
@@ -392,7 +410,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 5. 省份 */}
           <div className="form-section">
             <label className="form-label">目前所在省份<Req /></label>
             <select className="form-select" value={form.province}
@@ -403,7 +420,6 @@ export default function CareerPage() {
             </select>
           </div>
 
-          {/* 6. 英语 */}
           <div className="form-section">
             <label className="form-label">英语水平<Req /></label>
             <div className="radio-grid">
@@ -415,11 +431,10 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 7. 技能多选 */}
           <div className="form-section">
             <label className="form-label">
               除主要职业外，你还有哪些相关经验？
-              <span className="form-label-opt">（可多选）</span>
+              <span className="form-label-opt">（选填，可多选）</span>
             </label>
             <div className="skills-grid">
               {SKILLS_LIST.map(skill => (
@@ -430,7 +445,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 8. 学习方式 */}
           <div className="form-section">
             <label className="form-label">学习方式<Req /></label>
             <div className="radio-grid">
@@ -442,7 +456,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 9. 总周期 */}
           <div className="form-section">
             <label className="form-label">可接受总周期<Req /></label>
             <div className="radio-grid">
@@ -454,7 +467,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 10. 预算 */}
           <div className="form-section">
             <label className="form-label">可用预算<Req /></label>
             <div className="radio-grid radio-grid-3">
@@ -466,7 +478,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 11. 顾虑 */}
           <div className="form-section">
             <label className="form-label">最大的顾虑是什么？<Req /></label>
             <div className="radio-grid radio-grid-2">
@@ -478,7 +489,6 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {/* 12. 联系方式 */}
           <div className="contact-section">
             <div className="contact-section-title">留下联系方式，完整报告发到你邮箱</div>
             <div className="contact-section-sub">完整认证步骤和行动清单将发送至邮箱</div>
@@ -494,15 +504,14 @@ export default function CareerPage() {
             </div>
             <div className="form-section" style={{ marginBottom: 0 }}>
               <label className="form-label">手机号</label>
-              <input className="form-input" type="tel"
-                placeholder="647-xxx-xxxx（选填）"
+              <input className="form-input" type="tel" placeholder="647-xxx-xxxx（选填）"
                 value={form.phone} onChange={e => set('phone', e.target.value)} />
               <p className="form-hint">选填 · 用于培训机构与你直接联系</p>
             </div>
           </div>
 
           <button type="submit" className="submit-btn">开始分析 →</button>
-          <p className="submit-hint">分析通常需要5–10秒，请稍候</p>
+          <p className="submit-hint">分析通常需要15–30秒，请稍候</p>
         </form>
       </div>
     </div>

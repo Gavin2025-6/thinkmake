@@ -664,6 +664,7 @@ footer {
   animation: spin 0.75s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.loading-msg { transition: opacity 0.4s; font-size: 15px; color: var(--muted); }
 
 /* Results */
 .result-summary {
