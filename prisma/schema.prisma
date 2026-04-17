@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  email     String?
+
+  conversationHistory  Json
+  extractedProfile     Json?
+  matchedCases         Json?
+  matchedTactics       Json?
+  finalRecommendations Json?
+
+  pdfDownloadedAt DateTime?
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id     String  @id @default(cuid())
+  email  String  @unique
+  wechat String?
+
+  conversationId String
+
+  recommendedCareers Json?
+  province           String?
+  englishLevel       String?
+
+  source       String?
+  unsubscribed Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+}
