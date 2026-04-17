@@ -212,9 +212,11 @@ export default function CareerPage() {
         <div className="res-cards-wrap">
           {careers.length > 0 ? (
             <div className="res-cards-grid">
-              {careers.map((c, i) => (
+              {careers.map((c, i) => {
+                const safeEmoji = c.emoji && /^\p{Emoji}/u.test(c.emoji) ? c.emoji : '💼'
+                return (
                 <div key={i} className="res-card">
-                  <div className="res-card-emoji">{getCareerEmoji(c.name, c.emoji)}</div>
+                  <div className="res-card-emoji">{getCareerEmoji(c.name, safeEmoji)}</div>
                   <div className="res-card-name">{c.name}</div>
                   <div className="res-card-reason">{c.match_reason}</div>
                   <div className="res-card-data">
@@ -223,7 +225,8 @@ export default function CareerPage() {
                     <span>📈 {c.salary}</span>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="res-empty">数据解析失败，请查收邮件中的完整报告</div>

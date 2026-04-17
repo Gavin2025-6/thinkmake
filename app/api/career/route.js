@@ -164,21 +164,6 @@ function getEnglishResources(name) {
 
 // ── EMAIL HTML (table-based) ───────────────────────────────
 
-function extractActionItems(report) {
-  if (!report) return []
-  const lines = report.split('\n')
-  let inSection = false
-  const items = []
-  for (const line of lines) {
-    if (/行动清单|这周|本周/.test(line) && /^#{1,3}\s/.test(line)) { inSection = true; continue }
-    if (inSection && /^#{1,3}\s/.test(line)) break
-    if (inSection) {
-      const bullet = line.trim().match(/^(?:[-•]|\d+\.)\s+(.+)/)
-      if (bullet) { items.push(bullet[1].trim()); if (items.length >= 3) break }
-    }
-  }
-  return items
-}
 
 function mdToEmailHtml(md) {
   if (!md) return ''
@@ -254,24 +239,6 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
       </td></tr>`
   }).join('')
 
-  // Extract action items from full_report for the green block
-  const actionItems = extractActionItems(full_report)
-  const actionBlock = actionItems.length > 0 ? `
-  <tr><td style="padding:0 24px 24px">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#F0FDF4;border-radius:10px;border:1px solid #bbf7d0">
-      <tr><td style="padding:16px 20px 12px">
-        <div style="font-size:15px;font-weight:700;color:#166534;font-family:Arial,sans-serif">✅ 这周就可以做的3件事</div>
-      </td></tr>
-      <tr><td style="padding:0 20px 16px">
-        <table cellpadding="0" cellspacing="0" width="100%">
-          ${actionItems.map((item, i) => `
-          <tr><td style="padding:4px 0;font-size:14px;color:#166534;line-height:1.6;font-family:Arial,sans-serif">
-            <strong>${i + 1}.</strong> ${item.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#15803d;text-decoration:underline">$1</a>')}
-          </td></tr>`).join('')}
-        </table>
-      </td></tr>
-    </table>
-  </td></tr>` : ''
 
   return `<!DOCTYPE html>
 <html>
@@ -298,8 +265,6 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
   </td></tr>
 
   ${careerCards}
-
-  ${actionBlock}
 
   <tr><td style="padding:0 24px"><hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0"/></td></tr>
 
@@ -407,6 +372,7 @@ export async function POST(request) {
       .replace(/===CAREERS_START===[\s\S]*?===CAREERS_END===/g, '')
       .replace(/===REPORT_START===|===REPORT_END===/g, '')
       .replace(/^职业\d+[：:].*\|.*$/gm, '')
+      .replace(/^---$/gm, '')
       .trim()
 
     const careers = careersRaw.split('\n')
