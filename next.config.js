@@ -1,5 +1,3 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  transpilePackages: ['react-markdown'],
-}
+const nextConfig = {}
 module.exports = nextConfig
