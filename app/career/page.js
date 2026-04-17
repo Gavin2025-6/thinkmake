@@ -78,44 +78,15 @@ function getCareerEmoji(name = '', emojiFromApi = '') {
   return '🌟'
 }
 
-function getEnglishResources(englishLevel, careerName) {
-  const n = (careerName || '').toLowerCase()
-  let vocabHint = '学习该行业专业词汇，建立职场英语基础'
-  if (n.includes('保险') || n.includes('insurance')) vocabHint = '重点学习LLQP考试词汇（支持中文应考，英语压力小）'
-  else if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) vocabHint = '学习OREA课程术语，掌握合同和法律词汇'
-  else if (n.includes('护士') || n.includes('nurse') || n.includes('医')) vocabHint = '学习医疗英语：病历记录、用药沟通、患者交流术语'
-  else if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) vocabHint = '学习财务英语：审计、税务、财务报表专业词汇'
-  else if (n.includes('电工') || n.includes('electrician') || n.includes('水管')) vocabHint = '学习技工英语：图纸阅读、安全规范、操作手册'
-  else if (n.includes('厨') || n.includes('chef') || n.includes('cook') || n.includes('餐')) vocabHint = '学习餐饮英语：菜单写作、食品安全法规术语'
-
-  if (englishLevel === '基础') {
-    return {
-      title: '📚 英语提升建议',
-      items: [
-        { text: '多伦多公共图书馆 · 免费ESL课程', url: 'https://www.tpl.ca/programs-and-events/learning/english-language-learning' },
-        { text: 'Settlement.org · 免费语言培训资源', url: 'https://settlement.org/ontario/education/english-as-a-second-language-esl/' },
-        { text: vocabHint, url: null },
-      ],
-    }
-  }
-  if (englishLevel === '中等') {
-    let yt = '搜索该行业英文YouTube频道，跟进行业最新资讯'
-    let free = '查看行业协会官网的免费学习资源和备考材料'
-    if (n.includes('保险') || n.includes('insurance')) { yt = 'YouTube: "Insurance School of Canada"'; free = 'FSRA 官网 · 免费备考指引与样题' }
-    else if (n.includes('房地产') || n.includes('real estate')) { yt = 'YouTube: 搜索 "OREA real estate exam"'; free = 'RECO 官网 · 免费入门课程与考试大纲' }
-    else if (n.includes('会计') || n.includes('cpa')) { yt = 'YouTube: "CPA Canada" 官方频道'; free = 'CPA Ontario 官网 · 免费备考资源包' }
-    else if (n.includes('护士') || n.includes('nurse')) { yt = 'YouTube: "Nurse Sarah" / "Simple Nursing"'; free = 'CNO 官网 · 注册流程与英语要求详解' }
-    return { title: '📺 行业英语资源', items: [{ text: yt, url: null }, { text: free, url: null }] }
-  }
-  return { fluent: true }
-}
 
 // ── FORM STATE ─────────────────────────────────────────────
+
+const SALUTATION_OPTIONS = ['先生', '女士', '不透露']
 
 const EMPTY_FORM = {
   occupation: '', experience_years: '', education: '', current_status: '',
   province: '', english: '', skills: [], study_mode: '', total_timeline: '',
-  budget: '', concern: '', name: '', email: '', phone: '',
+  budget: '', concern: '', name: '', salutation: '', email: '', phone: '',
 }
 
 // ── MAIN COMPONENT ─────────────────────────────────────────
@@ -156,7 +127,7 @@ export default function CareerPage() {
     const required = [
       'occupation', 'experience_years', 'education', 'current_status',
       'province', 'english', 'study_mode', 'total_timeline',
-      'budget', 'concern', 'name', 'email',
+      'budget', 'concern', 'name', 'salutation', 'email',
     ]
     const missing = required.filter(k => !form[k])
     if (missing.length > 0) {
@@ -243,7 +214,7 @@ export default function CareerPage() {
           {careers.length > 0 ? (
             <div className="res-cards-grid">
               {careers.map((c, i) => {
-                const engRes = getEnglishResources(form.english, c.name)
+                const engResources = c.english_resources || []
                 const isOpen = !!expandedEnglish[i]
                 return (
                   <div key={i} className="res-card">
@@ -255,27 +226,24 @@ export default function CareerPage() {
                       <span>💰 {c.cost}</span>
                       <span>📈 {c.salary}</span>
                     </div>
-                    {engRes && !engRes.fluent && (
+                    {engResources.length > 0 && (
                       <div className="res-eng-section">
                         <button className="res-eng-toggle"
                           onClick={() => setExpandedEnglish(prev => ({ ...prev, [i]: !prev[i] }))}>
-                          {engRes.title} {isOpen ? '↑' : '↓'}
+                          📚 英语学习资源 {isOpen ? '↑' : '↓'}
                         </button>
                         {isOpen && (
                           <ul className="res-eng-list">
-                            {engRes.items.map((item, j) => (
+                            {engResources.map((item, j) => (
                               <li key={j}>
                                 {item.url
-                                  ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.text}</a>
-                                  : item.text}
+                                  ? <a href={item.url} target="_blank" rel="noopener noreferrer">{item.name}</a>
+                                  : item.name}
                               </li>
                             ))}
                           </ul>
                         )}
                       </div>
-                    )}
-                    {engRes?.fluent && (
-                      <div className="res-eng-fluent">✓ 英语优势：可直接参加全英文培训课程</div>
                     )}
                   </div>
                 )
@@ -443,6 +411,16 @@ export default function CareerPage() {
               <label className="form-label">姓名<Req /></label>
               <input className="form-input" type="text" placeholder="你的名字"
                 value={form.name} onChange={e => set('name', e.target.value)} />
+            </div>
+            <div className="form-section" style={{ marginBottom: '16px' }}>
+              <label className="form-label">称谓<Req /></label>
+              <div className="radio-grid radio-grid-3">
+                {SALUTATION_OPTIONS.map(opt => (
+                  <div key={opt} style={{ textAlign: 'center' }}
+                    className={`radio-card${form.salutation === opt ? ' selected' : ''}`}
+                    onClick={() => set('salutation', opt)}>{opt}</div>
+                ))}
+              </div>
             </div>
             <div className="form-section" style={{ marginBottom: '16px' }}>
               <label className="form-label">邮箱<Req /></label>
