@@ -169,16 +169,19 @@ function buildEmailHtml({ name, careers, full_report }) {
 async function generateAndSend({ userPrompt, name, email, careers, requestId }) {
   try {
     const full_report = await callClaude(FULL_REPORT_PROMPT, userPrompt, 3000)
+    console.log('[CareerPath] 准备发送邮件到:', email)
+    console.log('[CareerPath] Resend key存在:', !!process.env.RESEND_API_KEY)
     if (resend) {
-      await resend.emails.send({
+      const emailResult = await resend.emails.send({
         from: 'CareerPath <onboarding@resend.dev>',
         to: email,
         subject: `${name}，你的加拿大职业规划报告 🍁`,
         html: buildEmailHtml({ name, careers, full_report }),
       })
+      console.log('[CareerPath] 邮件发送结果:', JSON.stringify(emailResult))
       jobs.set(requestId, 'sent')
-      console.log('[CareerPath] email sent:', email, requestId)
     } else {
+      console.log('[CareerPath] Resend未初始化，跳过发送')
       jobs.set(requestId, 'failed')
     }
   } catch (err) {
