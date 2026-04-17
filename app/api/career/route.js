@@ -164,6 +164,22 @@ function getEnglishResources(name) {
 
 // ── EMAIL HTML (table-based) ───────────────────────────────
 
+function extractActionItems(report) {
+  if (!report) return []
+  const lines = report.split('\n')
+  let inSection = false
+  const items = []
+  for (const line of lines) {
+    if (/行动清单|这周|本周/.test(line) && /^#{1,3}\s/.test(line)) { inSection = true; continue }
+    if (inSection && /^#{1,3}\s/.test(line)) break
+    if (inSection) {
+      const bullet = line.trim().match(/^(?:[-•]|\d+\.)\s+(.+)/)
+      if (bullet) { items.push(bullet[1].trim()); if (items.length >= 3) break }
+    }
+  }
+  return items
+}
+
 function mdToEmailHtml(md) {
   if (!md) return ''
   return md.split('\n').map(line => {
@@ -188,7 +204,10 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
   const careerCards = careers.map(c => {
     const certBody = getCertificationBody(c.name)
     const steps = getCertificationSteps(c.name)
-    const resources = getEnglishResources(c.name)
+    // Use AI-provided resources from career object; fall back to server-side lookup
+    const resources = (c.english_resources && c.english_resources.length > 0)
+      ? c.english_resources
+      : getEnglishResources(c.name)
 
     const stepsHtml = steps.map((s, i) => `
       <tr><td style="padding:3px 0;font-size:14px;color:#374151;line-height:1.5;font-family:Arial,sans-serif">
@@ -197,7 +216,9 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
 
     const resourcesHtml = resources.map(r => `
       <tr><td style="padding:2px 0;font-size:13px;font-family:Arial,sans-serif">
-        · <a href="${r.url}" style="color:#7C3AED;text-decoration:none">${r.name}</a>
+        · ${r.url
+          ? `<a href="${r.url}" style="color:#7C3AED;text-decoration:none">${r.name}</a>`
+          : `<span style="color:#374151">${r.name}</span>`}
       </td></tr>`).join('')
 
     return `
@@ -226,12 +247,31 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
             <div style="font-size:13px;color:#374151;margin-bottom:10px;font-family:Arial,sans-serif">
               官方认证机构：<a href="${certBody.url}" style="color:#7C3AED;text-decoration:none;font-weight:600">${certBody.name} →</a>
             </div>
-            <div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:Arial,sans-serif">英语学习资源</div>
+            <div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:Arial,sans-serif">学习资源</div>
             <table cellpadding="0" cellspacing="0" width="100%">${resourcesHtml}</table>
           </td></tr>
         </table>
       </td></tr>`
   }).join('')
+
+  // Extract action items from full_report for the green block
+  const actionItems = extractActionItems(full_report)
+  const actionBlock = actionItems.length > 0 ? `
+  <tr><td style="padding:0 24px 24px">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#F0FDF4;border-radius:10px;border:1px solid #bbf7d0">
+      <tr><td style="padding:16px 20px 12px">
+        <div style="font-size:15px;font-weight:700;color:#166534;font-family:Arial,sans-serif">✅ 这周就可以做的3件事</div>
+      </td></tr>
+      <tr><td style="padding:0 20px 16px">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          ${actionItems.map((item, i) => `
+          <tr><td style="padding:4px 0;font-size:14px;color:#166534;line-height:1.6;font-family:Arial,sans-serif">
+            <strong>${i + 1}.</strong> ${item.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#15803d;text-decoration:underline">$1</a>')}
+          </td></tr>`).join('')}
+        </table>
+      </td></tr>
+    </table>
+  </td></tr>` : ''
 
   return `<!DOCTYPE html>
 <html>
@@ -243,21 +283,23 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
 <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;border-radius:12px;overflow:hidden">
 
   <tr><td bgcolor="#4C1D95" style="padding:32px;text-align:center">
-    <div style="color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;font-family:Arial,sans-serif">ThinkMake</div>
-    <div style="color:#e9d5ff;font-size:13px;margin-top:4px;font-family:Arial,sans-serif">CareerPath · 加拿大职业规划</div>
-    <div style="color:#ddd6fe;font-size:14px;margin-top:10px;font-family:Arial,sans-serif">为 ${addressName} 定制 · ${province} · ${year}年</div>
+    <div style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;font-family:Arial,sans-serif">你的加拿大职业规划报告</div>
+    <div style="color:#e9d5ff;font-size:13px;margin-top:6px;font-family:Arial,sans-serif">CareerPath by ThinkMake</div>
+    <div style="color:#ddd6fe;font-size:14px;margin-top:8px;font-family:Arial,sans-serif">为 ${addressName} 定制 · ${province} · ${year}年</div>
   </td></tr>
 
   <tr><td style="padding:28px 24px 12px">
     <p style="font-size:16px;color:#111827;margin:0 0 8px;font-family:Arial,sans-serif">你好 <strong>${addressName}</strong>，</p>
-    <p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0;font-family:Arial,sans-serif">感谢使用 CareerPath 职业规划工具。以下是根据你的背景生成的专属规划报告，请保存以备参考。</p>
+    <p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0;font-family:Arial,sans-serif">以下是根据你的背景生成的专属规划报告，请保存以备参考。</p>
   </td></tr>
 
-  <tr><td style="padding:16px 24px 8px">
+  <tr><td style="padding:8px 24px 12px">
     <div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:2px;text-transform:uppercase;font-family:Arial,sans-serif">推荐职业方向</div>
   </td></tr>
 
   ${careerCards}
+
+  ${actionBlock}
 
   <tr><td style="padding:0 24px"><hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0"/></td></tr>
 
@@ -269,15 +311,7 @@ function buildEmailHtml({ name, salutation, province, careers, full_report }) {
   <tr><td style="padding:0 24px"><hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0"/></td></tr>
 
   <tr><td style="padding:20px 24px 8px">
-    <p style="font-size:12px;color:#9ca3af;line-height:1.7;margin:0 0 10px;font-family:Arial,sans-serif">本报告仅供参考，具体认证要求请以各官方机构最新公告为准。</p>
-    <p style="font-size:12px;color:#9ca3af;margin:0;font-family:Arial,sans-serif">
-      数据来源：
-      <a href="https://www.skilledtradesontario.ca" style="color:#7C3AED;text-decoration:none">Skilled Trades Ontario</a> ·
-      <a href="https://www.cno.org" style="color:#7C3AED;text-decoration:none">CNO</a> ·
-      <a href="https://www.cpaontario.ca" style="color:#7C3AED;text-decoration:none">CPA Ontario</a> ·
-      <a href="https://www.fsrao.ca" style="color:#7C3AED;text-decoration:none">FSRA</a> ·
-      <a href="https://www.jobbank.gc.ca" style="color:#7C3AED;text-decoration:none">Job Bank Canada</a>
-    </p>
+    <p style="font-size:12px;color:#9ca3af;line-height:1.7;margin:0 0 10px;font-family:Arial,sans-serif">本报告仅供参考，具体认证要求请以各官方机构最新公告为准。数据来源：Skilled Trades Ontario · CNO · CPA Ontario · FSRA · Job Bank Canada</p>
   </td></tr>
 
   <tr><td bgcolor="#f9fafb" style="padding:16px 24px;text-align:center;border-top:1px solid #e5e7eb">
