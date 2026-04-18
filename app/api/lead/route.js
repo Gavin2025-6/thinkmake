@@ -49,11 +49,20 @@ export async function POST(request) {
     // Send email with summary
     let emailSent = false
     if (process.env.RESEND_API_KEY && summaryText) {
-      const html = buildSummaryEmail(normalizedEmail, summaryText)
+      // summaryText is JSON.stringify(summaryData) from frontend
+      let summaryData = null
+      try { summaryData = JSON.parse(summaryText) } catch {}
+
+      const userName = body.userName || ''
+      const html = buildSummaryEmail(userName, summaryData)
+      const subject = userName
+        ? `你好 ${userName}，你的加拿大职业规划报告来了 🍁`
+        : '你的加拿大职业规划报告来了 🍁'
+
       const result = await resend.emails.send({
         from: 'ThinkMake CareerPath <onboarding@resend.dev>',
         to: normalizedEmail,
-        subject: '你的加拿大职业规划报告 — ThinkMake CareerPath',
+        subject,
         html,
       })
       if (result.error) {
@@ -77,50 +86,115 @@ export async function POST(request) {
   }
 }
 
-function buildSummaryEmail(email, summaryText) {
-  // Convert markdown to basic HTML
-  const html = summaryText
-    .replace(/^## (.+)$/gm, '<h2 style="color:#1a1a1a;margin:24px 0 8px">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 style="color:#2563eb;margin:16px 0 6px">$1</h3>')
-    .replace(/^\*\*(.+)\*\*$/gm, '<strong>$1</strong>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.+)$/gm, '<li style="margin:4px 0">$1</li>')
-    .replace(/^(\d+)\. (.+)$/gm, '<li style="margin:4px 0"><strong>$1.</strong> $2</li>')
-    .replace(/\n\n/g, '</p><p style="margin:8px 0">')
-    .replace(/\n/g, '<br>')
+function buildSummaryEmail(userName, data) {
+  const wechat = process.env.WECHAT_CONTACT || 'thinkmake_ca'
+  const greeting = userName ? `你好 ${userName}，` : '你好，'
+
+  // ── Recommendations ──────────────────────────────────────────
+  const recsHtml = (data?.recommendations || []).map(rec => {
+    const matchColor = rec.matchPct >= 80 ? '#065f46' : '#92400e'
+    const matchBg    = rec.matchPct >= 80 ? '#d1fae5' : '#fef3c7'
+    return `
+    <div style="border:1px solid #e5e7eb;border-radius:10px;padding:18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="font-size:17px;font-weight:800;color:#1a1a1a">${esc(rec.title)}</span>
+        <span style="background:${matchBg};color:${matchColor};border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">匹配度 ${rec.matchPct}%</span>
+      </div>
+      <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.6">${esc(rec.why)}</p>
+      <table style="border-collapse:collapse;font-size:13px;color:#6b7280">
+        <tr>
+          <td style="padding:2px 16px 2px 0">⏱ ${esc(rec.timeline)}</td>
+          <td style="padding:2px 16px 2px 0">💰 ${esc(rec.cost)}</td>
+          <td style="padding:2px 0">📈 ${esc(rec.income)}</td>
+        </tr>
+      </table>
+      ${rec.sourceUrl ? `<p style="margin:8px 0 0"><a href="${rec.sourceUrl}" style="color:#7c3aed;font-size:12px">数据来源：${esc(rec.sourceName || rec.sourceUrl)}</a></p>` : ''}
+    </div>`
+  }).join('')
+
+  // ── Next Steps ───────────────────────────────────────────────
+  const stepsHtml = (data?.nextSteps || []).map((s, i) => `
+    <tr>
+      <td style="padding:5px 12px 5px 0;vertical-align:top">
+        <span style="display:inline-block;width:22px;height:22px;background:#7c3aed;color:#fff;border-radius:50%;text-align:center;line-height:22px;font-size:11px;font-weight:700">${i + 1}</span>
+      </td>
+      <td style="padding:5px 0;font-size:14px;color:#374151;line-height:1.5">${esc(s)}</td>
+    </tr>`).join('')
+
+  // ── Resources ────────────────────────────────────────────────
+  const resourcesHtml = (data?.resources || []).map(r =>
+    `<a href="${r.url}" style="display:inline-block;background:#f3f0ff;color:#7c3aed;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;text-decoration:none;margin:3px">${esc(r.name)}</a>`
+  ).join('')
 
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a">
-  <div style="border-bottom:3px solid #2563eb;padding-bottom:16px;margin-bottom:24px">
-    <span style="font-size:22px;font-weight:800">ThinkMake</span>
-    <span style="color:#2563eb;font-size:22px;font-weight:800">CareerPath</span>
-    <div style="color:#666;font-size:13px;margin-top:4px">加拿大华人职业规划</div>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8f9fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+<div style="max-width:580px;margin:0 auto;padding:24px 16px">
+
+  <!-- Header -->
+  <div style="background:#ffffff;border-radius:12px;padding:20px 24px;margin-bottom:16px;border:1px solid #e5e7eb">
+    <div style="font-size:20px;font-weight:800;color:#1a1a1a">Think<span style="color:#7c3aed">Make</span> CareerPath</div>
+    <div style="color:#9ca3af;font-size:12px;margin-top:2px">加拿大华人职业规划</div>
   </div>
 
-  <div style="background:#f0f7ff;border-left:4px solid #2563eb;padding:12px 16px;margin-bottom:24px;border-radius:0 8px 8px 0">
-    你好！这是你的专属职业规划报告，基于我们的对话内容生成。
+  <!-- Greeting -->
+  <div style="background:#f3f0ff;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-size:14px;color:#374151;line-height:1.6">
+    ${greeting}感谢使用 ThinkMake CareerPath！以下是根据你的对话生成的专属职业规划报告。
   </div>
 
-  <div style="line-height:1.7">
-    <p style="margin:8px 0">${html}</p>
+  <!-- Portrait -->
+  ${data?.portrait ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;margin-bottom:8px">你的画像</div>
+    <p style="margin:0;font-size:14px;color:#374151;line-height:1.7">${esc(data.portrait)}</p>
+  </div>` : ''}
+
+  <!-- Recommendations -->
+  ${recsHtml ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:14px">推荐方向</div>
+    ${recsHtml}
+  </div>` : ''}
+
+  <!-- Next Steps -->
+  ${stepsHtml ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px">🎯 明天能做的第一件事</div>
+    <table style="border-collapse:collapse;width:100%">${stepsHtml}</table>
+  </div>` : ''}
+
+  <!-- Resources -->
+  ${resourcesHtml ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px">🔗 相关资源</div>
+    <div>${resourcesHtml}</div>
+  </div>` : ''}
+
+  <!-- WeChat CTA -->
+  <div style="background:#1a1a2e;border-radius:12px;padding:22px;text-align:center;margin-bottom:16px">
+    <div style="color:#ffffff;font-size:15px;font-weight:700;margin-bottom:6px">想要一对一深度指导？</div>
+    <div style="color:#a78bfa;font-size:13px;margin-bottom:10px">加微信获取个性化职业规划服务</div>
+    <div style="color:#60a5fa;font-size:18px;font-weight:800">微信：${wechat}</div>
   </div>
 
-  <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb">
-    <div style="background:#1a1a2e;color:white;padding:20px;border-radius:12px;text-align:center">
-      <div style="font-size:15px;font-weight:600;margin-bottom:8px">需要一对一深度指导？</div>
-      <div style="color:#93c5fd;font-size:13px">加微信获取个性化职业规划服务</div>
-      <div style="font-size:18px;font-weight:700;margin-top:8px;color:#60a5fa">
-        微信号：${process.env.WECHAT_CONTACT || 'thinkmake_ca'}
-      </div>
-    </div>
-  </div>
-
-  <div style="margin-top:24px;color:#9ca3af;font-size:11px;text-align:center">
-    © ThinkMake CareerPath · thinkmake.ai<br>
+  <!-- Footer -->
+  <div style="text-align:center;color:#9ca3af;font-size:11px;line-height:1.8">
+    ThinkMake CareerPath · thinkmake.ai<br>
     如不希望接收邮件，请回复 STOP
   </div>
+
+</div>
 </body>
 </html>`
+}
+
+// Escape HTML special characters to prevent XSS in email
+function esc(str) {
+  if (!str) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }

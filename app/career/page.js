@@ -71,7 +71,7 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true }),
+        body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true, userName: userName }),
       })
       const json = await res.json()
       if (res.ok) {
