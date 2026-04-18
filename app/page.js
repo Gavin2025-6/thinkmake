@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-const TOTAL_ROUNDS = 12
+// Progress bar pulses to show activity, no fixed count shown
 
 // ── Markdown renderer ─────────────────────────────────────────
 function renderMd(text) {
@@ -63,6 +63,8 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const [leadFallback, setLeadFallback] = useState('')
+
   async function submitLead(email, wechat) {
     try {
       const summaryText = data ? JSON.stringify(data) : ''
@@ -71,7 +73,11 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true }),
       })
-      if (res.ok) setLeadDone(true)
+      const json = await res.json()
+      if (res.ok) {
+        setLeadDone(true)
+        if (json.fallbackMessage) setLeadFallback(json.fallbackMessage)
+      }
     } catch {}
   }
 
@@ -159,7 +165,9 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
       <div className="lead-final-card">
         {leadDone ? (
           <>
-            <div className="lead-done-text">✅ 完整报告已发送至 {userEmail}</div>
+            <div className="lead-done-text">
+            {leadFallback || `✅ 完整报告已发送至 ${userEmail}`}
+          </div>
             <div className="lead-wechat-block">
               <div className="lead-wechat-label">想要一对一深度指导？</div>
               <div className="lead-wechat-id">微信：{process.env.NEXT_PUBLIC_WECHAT_CONTACT || 'thinkmake_ca'}</div>
@@ -270,7 +278,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [round, setRound] = useState(0)
+  const [active, setActive] = useState(false) // progress bar pulse
   const [sessionId] = useState(() => `s_${Date.now()}_${Math.random().toString(36).slice(2)}`)
   const [summaryData, setSummaryData] = useState(null)
   const [isSummaryDone, setIsSummaryDone] = useState(false)
@@ -301,7 +309,7 @@ export default function ChatPage() {
     setMessages(newMessages)
     setInput('')
     setLoading(true)
-    setRound(r => r + 1)
+    setActive(true)
 
     try {
       // Filter out the initial greeting (it's static, not from Claude)
@@ -345,8 +353,6 @@ export default function ChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  const progressPct = Math.min(100, (round / TOTAL_ROUNDS) * 100)
-
   if (step === 'onboarding') return <OnboardingForm onSubmit={handleOnboardingSubmit} />
 
   return (
@@ -360,11 +366,8 @@ export default function ChatPage() {
           </div>
           <Link href="/quick" className="chat-nav-link">30秒快速版 →</Link>
         </div>
-        <div className="chat-progress-bar">
-          <div className="chat-progress-fill" style={{ width: `${progressPct}%` }} />
-        </div>
-        <div className="chat-progress-label">
-          {round === 0 ? '开始对话，获取专属职业规划' : `对话进度 ${round} / ${TOTAL_ROUNDS}`}
+        <div className={`chat-progress-bar${active ? ' chat-progress-active' : ''}`}>
+          <div className="chat-progress-fill" />
         </div>
       </div>
 

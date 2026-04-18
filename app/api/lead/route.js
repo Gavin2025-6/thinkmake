@@ -47,6 +47,7 @@ export async function POST(request) {
     }
 
     // Send email with summary
+    let emailSent = false
     if (process.env.RESEND_API_KEY && summaryText) {
       const html = buildSummaryEmail(normalizedEmail, summaryText)
       const result = await resend.emails.send({
@@ -57,10 +58,19 @@ export async function POST(request) {
       })
       if (result.error) {
         console.error('[Lead] Email error:', result.error)
+      } else {
+        emailSent = true
       }
     }
 
-    return NextResponse.json({ success: true })
+    const wechatContact = process.env.WECHAT_CONTACT || 'thinkmake_ca'
+    return NextResponse.json({
+      success: true,
+      emailSent,
+      fallbackMessage: !process.env.RESEND_API_KEY
+        ? `报告已保存，请添加微信 ${wechatContact} 获取完整报告`
+        : null,
+    })
   } catch (err) {
     console.error('[Lead] Error:', err)
     return NextResponse.json({ error: err.message || '提交失败' }, { status: 500 })
