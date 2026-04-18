@@ -283,8 +283,10 @@ export default function ChatPage() {
   const [summaryData, setSummaryData] = useState(null)
   const [isSummaryDone, setIsSummaryDone] = useState(false)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
   const textareaRef = useRef(null)
 
+  // Scroll to bottom whenever messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, summaryData])
@@ -292,6 +294,31 @@ export default function ChatPage() {
   useEffect(() => {
     if (!loading && step === 'chat') textareaRef.current?.focus()
   }, [loading, step])
+
+  // Handle iOS Safari / Android keyboard resize via visualViewport
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const viewport = window.visualViewport
+    if (!viewport) return
+
+    const handleResize = () => {
+      const keyboardHeight = Math.max(0, window.innerHeight - viewport.height)
+      document.documentElement.style.setProperty('--keyboard-height', keyboardHeight + 'px')
+      // Scroll to bottom when keyboard appears
+      if (keyboardHeight > 50) {
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    }
+
+    viewport.addEventListener('resize', handleResize)
+    viewport.addEventListener('scroll', handleResize)
+    return () => {
+      viewport.removeEventListener('resize', handleResize)
+      viewport.removeEventListener('scroll', handleResize)
+    }
+  }, [])
 
   function handleOnboardingSubmit(info) {
     setUserInfo(info)
@@ -372,7 +399,7 @@ export default function ChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="chat-messages">
+      <div className="chat-messages" ref={messagesContainerRef}>
         {messages.map((msg, i) => (
           <div key={i} className={`chat-msg-wrap ${msg.role === 'user' ? 'chat-msg-wrap-user' : 'chat-msg-wrap-ai'}`}>
             {msg.role === 'assistant' && <div className="chat-avatar">🤖</div>}

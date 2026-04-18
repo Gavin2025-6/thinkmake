@@ -1202,6 +1202,8 @@ footer {
 }
 
 /* ── CHAT V2 (light theme) ── */
+:root { --keyboard-height: 0px; }
+
 .chat-root {
   display: flex;
   flex-direction: column;
@@ -1210,6 +1212,8 @@ footer {
   background: #F8F9FA;
   color: #1A1A1A;
   overflow: hidden;
+  /* On mobile, shrink when keyboard is up */
+  max-height: calc(100dvh - 60px - var(--keyboard-height, 0px));
 }
 /* Onboarding form also needs nav offset */
 .onboard-root {
@@ -1322,6 +1326,7 @@ footer {
   background: #FFFFFF;
   border-top: 1px solid #E5E7EB;
   padding: 10px 20px;
+  padding-bottom: max(10px, var(--keyboard-height, 0px));
 }
 .chat-input-inner {
   display: flex; gap: 8px; align-items: flex-end;
