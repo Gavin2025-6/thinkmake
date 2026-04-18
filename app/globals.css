@@ -1205,10 +1205,16 @@ footer {
 .chat-root {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: calc(100dvh - 60px);
+  margin-top: 60px;
   background: #F8F9FA;
   color: #1A1A1A;
   overflow: hidden;
+}
+/* Onboarding form also needs nav offset */
+.onboard-root {
+  min-height: calc(100dvh - 60px);
+  margin-top: 60px;
 }
 
 .chat-header {
@@ -1343,7 +1349,7 @@ footer {
 
 /* ── Onboarding Form ── */
 .onboard-root {
-  min-height: 100dvh; background: #F8F9FA;
+  background: #F8F9FA;
   display: flex; align-items: center; justify-content: center;
   padding: 24px 16px;
 }

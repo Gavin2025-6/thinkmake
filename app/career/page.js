@@ -2,442 +2,435 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-// ── CONSTANTS ──────────────────────────────────────────────
+// Progress bar pulses to show activity, no fixed count shown
 
-const PROVINCES = [
-  { value: '', label: '请选择省份' },
-  { value: '安大略省 Ontario', label: '安大略省 Ontario' },
-  { value: '不列颠哥伦比亚省 BC', label: '不列颠哥伦比亚省 BC' },
-  { value: '阿尔伯塔省 Alberta', label: '阿尔伯塔省 Alberta' },
-  { value: '其他省份', label: '其他省份' },
-]
-const EXPERIENCE_OPTIONS = ['1–3年', '3–8年', '8年以上']
-const EDUCATION_OPTIONS = ['高中/中专', '大专', '本科', '硕士及以上']
-const STATUS_OPTIONS = [
-  '还没来加拿大，正在规划',
-  '刚到加拿大，6个月以内',
-  '已在加拿大1年以上',
-]
-const ENGLISH_OPTIONS = [
-  { value: '基础', desc: '基础：日常对话勉强，书面英语较弱' },
-  { value: '中等', desc: '中等：能沟通工作内容，有口音' },
-  { value: '流利', desc: '流利：工作语言无障碍' },
-]
-const SKILLS_LIST = [
-  '管理过团队', '有G驾照', '销售/客户服务',
-  '财务/会计相关', '体力/户外工作', '教学/培训',
-  '医疗/护理相关', '行政/文员', 'IT/电脑技术',
-  '烹饪/餐饮', '驾驶/运输', '建筑/装修',
-]
-const STUDY_OPTIONS = [
-  '全职学习：每天可投入6小时以上',
-  '兼职学习：边工作边学，每天2-3小时',
-  '极度有限：家庭或工作占用，每天约1小时',
-]
-const TIMELINE_OPTIONS = [
-  '1年以内想开始工作',
-  '1-3年都可以接受',
-  '3年以上没问题，要做就做最好的',
-]
-const BUDGET_OPTIONS = ['$5,000以下', '$5,000–$20,000', '$20,000以上']
-const CONCERN_OPTIONS = [
-  '不知道从哪里开始',
-  '担心英语不够用',
-  '不确定预算够不够',
-  '担心年龄影响就业',
-  '家人不支持转行',
-  '其他',
-]
-
-const LOADING_MESSAGES = [
-  '正在分析你的职业背景...',
-  '正在匹配加拿大认证路径...',
-  '正在计算时间和费用...',
-  '正在生成你的专属报告...',
-]
-
-// ── HELPERS ────────────────────────────────────────────────
-
-function Req() {
-  return <span style={{ color: '#ef4444', fontSize: '0.75em', marginLeft: '4px' }}>*</span>
+// ── Markdown renderer ─────────────────────────────────────────
+function renderMd(text) {
+  if (!text) return ''
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^## (.+)$/gm, '<h2 class="chat-h2">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 class="chat-h3">$1</h3>')
+    .replace(/^- (.+)$/gm, '<span class="chat-li">· $1</span><br>')
+    .replace(/^(\d+)\. (.+)$/gm, '<span class="chat-li"><strong>$1.</strong> $2</span><br>')
+    .replace(/\n\n/g, '<br>')
+    .replace(/\n/g, '<br>')
 }
 
-function getCareerEmoji(name = '', emojiFromApi = '') {
-  if (emojiFromApi) return emojiFromApi
-  const n = name.toLowerCase()
-  if (n.includes('护士') || n.includes('nurse') || n.includes('医')) return '🏥'
-  if (n.includes('电工') || n.includes('electrician') || n.includes('水管') || n.includes('plumb')) return '🔧'
-  if (n.includes('会计') || n.includes('cpa') || n.includes('accounting')) return '📊'
-  if (n.includes('房地产') || n.includes('real estate') || n.includes('经纪')) return '🏠'
-  if (n.includes('汽车') || n.includes('automotive') || n.includes('车')) return '🚗'
-  if (n.includes('厨') || n.includes('chef') || n.includes('cook') || n.includes('餐')) return '👨‍🍳'
-  if (n.includes('金融') || n.includes('finance') || n.includes('投资')) return '📈'
-  if (n.includes('教') || n.includes('teacher') || n.includes('ece') || n.includes('幼')) return '👩‍🏫'
-  if (n.includes('it') || n.includes('tech') || n.includes('程序') || n.includes('软件')) return '💻'
-  if (n.includes('保险') || n.includes('insurance')) return '🛡️'
-  return '🌟'
+// ── Recommendation Card ───────────────────────────────────────
+function RecCard({ rec }) {
+  const [open, setOpen] = useState(false)
+  const isHigh = rec.matchPct >= 80
+  return (
+    <div className="rec-card">
+      <div className="rec-card-top">
+        <div className="rec-title">{rec.title}</div>
+        <span className={isHigh ? 'rec-badge rec-badge-high' : 'rec-badge rec-badge-mid'}>
+          匹配度 {rec.matchPct}%
+        </span>
+      </div>
+      <p className="rec-why">{rec.why}</p>
+      <div className="rec-stats">
+        <span>⏱ {rec.timeline}</span>
+        <span>💰 {rec.cost}</span>
+        <span>📈 {rec.income}</span>
+      </div>
+      {rec.sourceUrl && (
+        <a href={rec.sourceUrl} target="_blank" rel="noopener" className="rec-source">
+          数据来源：{rec.sourceName || rec.sourceUrl}
+        </a>
+      )}
+      <button className="rec-expand" onClick={() => setOpen(o => !o)}>
+        {open ? '收起 ▲' : '了解详细路径 ▼'}
+      </button>
+      {open && <p className="rec-details">{rec.details}</p>}
+    </div>
+  )
 }
 
+// ── Summary View ──────────────────────────────────────────────
+function SummaryView({ data, userName, userEmail, sessionId }) {
+  const [leadDone, setLeadDone] = useState(false)
+  const [leadWechat, setLeadWechat] = useState('')
+  const [leadSubmitting, setLeadSubmitting] = useState(false)
+  const [leadError, setLeadError] = useState('')
 
-// ── FORM STATE ─────────────────────────────────────────────
-
-const SALUTATION_OPTIONS = ['先生', '女士', '不透露']
-
-const EMPTY_FORM = {
-  occupation: '', experience_years: '', education: '', current_status: '',
-  province: '', english: '', skills: [], study_mode: '', total_timeline: '',
-  budget: '', concern: '', name: '', salutation: '', email: '', phone: '',
-}
-
-// ── MAIN COMPONENT ─────────────────────────────────────────
-
-export default function CareerPage() {
-  const [step, setStep] = useState('form')          // form | loading | result
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [careers, setCareers] = useState([])
-  const [emailStatus, setEmailStatus] = useState('pending')  // pending | sent | failed
-  const [jobId, setJobId] = useState(null)
-  const [error, setError] = useState('')
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
-  const loadingTimerRef = useRef(null)
-  const pollTimerRef = useRef(null)
-
-  // Rotate loading messages every 3s
+  // Auto-submit lead if we already have email from onboarding
   useEffect(() => {
-    if (step === 'loading') {
-      loadingTimerRef.current = setInterval(() => {
-        setLoadingMsgIdx(i => (i + 1) % LOADING_MESSAGES.length)
-      }, 3000)
+    if (userEmail && !leadDone) {
+      submitLead(userEmail, '')
     }
-    return () => clearInterval(loadingTimerRef.current)
-  }, [step])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Poll for email status when jobId is set
-  useEffect(() => {
-    if (!jobId || step !== 'result') return
-    pollTimerRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/career/status?id=${jobId}`)
-        const data = await res.json()
-        if (data.status === 'sent' || data.status === 'failed') {
-          setEmailStatus(data.status)
-          clearInterval(pollTimerRef.current)
-        }
-      } catch (_) {}
-    }, 5000)
-    return () => clearInterval(pollTimerRef.current)
-  }, [jobId, step])
+  const [leadFallback, setLeadFallback] = useState('')
 
-  function set(key, value) { setForm(prev => ({ ...prev, [key]: value })) }
-
-  function toggleSkill(skill) {
-    setForm(prev => ({
-      ...prev,
-      skills: prev.skills.includes(skill)
-        ? prev.skills.filter(s => s !== skill)
-        : [...prev.skills, skill],
-    }))
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    const required = [
-      'occupation', 'experience_years', 'education', 'current_status',
-      'province', 'english', 'study_mode', 'total_timeline',
-      'budget', 'concern', 'name', 'salutation', 'email',
-    ]
-    const missing = required.filter(k => !form[k])
-    if (missing.length > 0) {
-      setError('请填写所有必填字段')
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      return
-    }
-    if (!form.email.includes('@')) { setError('请输入有效的邮箱地址'); return }
-
-    setError('')
-    setStep('loading')
-    setLoadingMsgIdx(0)
-    setCareers([])
-    setEmailStatus('pending')
-
+  async function submitLead(email, wechat) {
     try {
-      const res = await fetch('/api/career', {
+      const summaryText = data ? JSON.stringify(data) : ''
+      const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true }),
+      })
+      const json = await res.json()
+      if (res.ok) {
+        setLeadDone(true)
+        if (json.fallbackMessage) setLeadFallback(json.fallbackMessage)
+      }
+    } catch {}
+  }
+
+  async function handleWechatSubmit(e) {
+    e.preventDefault()
+    setLeadSubmitting(true)
+    setLeadError('')
+    await submitLead(userEmail, leadWechat)
+    setLeadSubmitting(false)
+  }
+
+  if (!data) return null
+
+  return (
+    <div className="summary-wrap">
+      {/* Portrait */}
+      <div className="summary-portrait">
+        <div className="summary-portrait-label">你的画像</div>
+        <p>{data.portrait}</p>
+      </div>
+
+      {/* Recommendation cards */}
+      <div className="summary-section-title">推荐方向</div>
+      <div className="rec-grid">
+        {(data.recommendations || []).map((rec, i) => (
+          <RecCard key={i} rec={rec} />
+        ))}
+      </div>
+
+      {/* Cases */}
+      {data.cases?.length > 0 && (
+        <div className="summary-block">
+          <div className="summary-block-title">📚 真实案例参考</div>
+          {data.cases.map((c, i) => (
+            <div key={i} className="case-item">
+              <div className="case-desc">{c.description}</div>
+              {c.quote && <div className="case-quote">"{c.quote}"</div>}
+              {c.lesson && <div className="case-lesson">→ {c.lesson}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Certainty */}
+      {data.certainty && (
+        <div className="summary-block">
+          <div className="summary-block-title">确定性分级</div>
+          {data.certainty.sure?.map((s, i) => (
+            <div key={i} className="certainty-item">✅ {s}</div>
+          ))}
+          {data.certainty.unsure?.map((s, i) => (
+            <div key={i} className="certainty-item">⚠️ {s}</div>
+          ))}
+          {data.certainty.professional?.map((s, i) => (
+            <div key={i} className="certainty-item">❓ {s}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Next steps */}
+      {data.nextSteps?.length > 0 && (
+        <div className="summary-block">
+          <div className="summary-block-title">🎯 明天能做的事</div>
+          {data.nextSteps.map((s, i) => (
+            <div key={i} className="nextstep-item"><span className="nextstep-num">{i + 1}</span>{s}</div>
+          ))}
+        </div>
+      )}
+
+      {/* Resources */}
+      {data.resources?.length > 0 && (
+        <div className="summary-block">
+          <div className="summary-block-title">🔗 相关资源</div>
+          <div className="resources-list">
+            {data.resources.map((r, i) => (
+              <a key={i} href={r.url} target="_blank" rel="noopener" className="resource-link">
+                {r.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lead / email confirmation */}
+      <div className="lead-final-card">
+        {leadDone ? (
+          <>
+            <div className="lead-done-text">
+            {leadFallback || `✅ 完整报告已发送至 ${userEmail}`}
+          </div>
+            <div className="lead-wechat-block">
+              <div className="lead-wechat-label">想要一对一深度指导？</div>
+              <div className="lead-wechat-id">微信：{process.env.NEXT_PUBLIC_WECHAT_CONTACT || 'thinkmake_ca'}</div>
+            </div>
+            <form onSubmit={handleWechatSubmit} className="lead-wechat-form">
+              <input
+                className="onboard-input"
+                type="text"
+                placeholder="留下你的微信号，我们主动联系你"
+                value={leadWechat}
+                onChange={e => setLeadWechat(e.target.value)}
+              />
+              {leadError && <div className="lead-error">{leadError}</div>}
+              <button type="submit" className="onboard-btn" disabled={leadSubmitting || !leadWechat}>
+                {leadSubmitting ? '提交中...' : '提交微信号'}
+              </button>
+            </form>
+          </>
+        ) : (
+          <div className="lead-done-text">⏳ 发送报告中...</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Onboarding Form ───────────────────────────────────────────
+function OnboardingForm({ onSubmit }) {
+  const [name, setName] = useState('')
+  const [gender, setGender] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [consent, setConsent] = useState(true)
+  const [error, setError] = useState('')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!name.trim()) { setError('请填写称呼'); return }
+    if (!email.includes('@')) { setError('请输入有效的邮箱地址'); return }
+    setError('')
+    onSubmit({ name: name.trim(), gender, email: email.trim().toLowerCase(), phone, consent })
+  }
+
+  return (
+    <div className="onboard-root">
+      <div className="onboard-card">
+        <div className="onboard-logo">Think<span>Make</span></div>
+        <h1 className="onboard-title">加拿大职业规划</h1>
+        <p className="onboard-sub">AI 顾问，基于真实案例 + 权威资源，帮你找到最适合的方向</p>
+
+        <form onSubmit={handleSubmit} className="onboard-form">
+          <div className="onboard-field">
+            <label className="onboard-label">怎么称呼你 <span className="req">*</span></label>
+            <input className="onboard-input" type="text" placeholder="例如：王芳、小明、Kelly"
+              value={name} onChange={e => setName(e.target.value)} />
+          </div>
+
+          <div className="onboard-field">
+            <label className="onboard-label">性别</label>
+            <div className="onboard-radio-group">
+              {['男', '女', '不想透露'].map(g => (
+                <label key={g} className={`onboard-radio${gender === g ? ' selected' : ''}`}>
+                  <input type="radio" name="gender" value={g}
+                    checked={gender === g} onChange={() => setGender(g)} />
+                  {g}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="onboard-field">
+            <label className="onboard-label">邮箱 <span className="req">*</span></label>
+            <input className="onboard-input" type="email" placeholder="your@email.com"
+              value={email} onChange={e => setEmail(e.target.value)} />
+            <span className="onboard-hint">规划报告将发送到这里</span>
+          </div>
+
+          <div className="onboard-field">
+            <label className="onboard-label">电话</label>
+            <input className="onboard-input" type="tel" placeholder="647-xxx-xxxx（选填）"
+              value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+
+          <label className="onboard-consent">
+            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
+            <span>同意 ThinkMake 使用我的联系方式推送相关培训和政策信息（<Link href="/privacy" target="_blank" className="onboard-privacy-link">隐私政策</Link>）</span>
+          </label>
+
+          {error && <div className="onboard-error">{error}</div>}
+
+          <button type="submit" className="onboard-btn">
+            开始我的职业规划 →
+          </button>
+        </form>
+
+        <div className="onboard-footer">
+          <Link href="/quick" className="onboard-quick-link">已填过表单？用 30 秒快速版 →</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────
+export default function ChatPage() {
+  const [step, setStep] = useState('onboarding')
+  const [userInfo, setUserInfo] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [active, setActive] = useState(false) // progress bar pulse
+  const [sessionId] = useState(() => `s_${Date.now()}_${Math.random().toString(36).slice(2)}`)
+  const [summaryData, setSummaryData] = useState(null)
+  const [isSummaryDone, setIsSummaryDone] = useState(false)
+  const messagesEndRef = useRef(null)
+  const textareaRef = useRef(null)
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, summaryData])
+
+  useEffect(() => {
+    if (!loading && step === 'chat') textareaRef.current?.focus()
+  }, [loading, step])
+
+  function handleOnboardingSubmit(info) {
+    setUserInfo(info)
+    const greeting = `你好 ${info.name}！我是 ThinkMake 职业规划助手 👋\n\n我专门帮助加拿大华人新移民找到适合自己的职业方向。我手上有数十个真实华人新移民的案例、经过验证的求职策略，和 100+ 个加拿大权威资源。\n\n咱们聊几分钟，我帮你梳理一下方向。先告诉我：**你之前在国内做什么工作？做了多久？**`
+    setMessages([{ role: 'assistant', content: greeting }])
+    setStep('chat')
+  }
+
+  async function sendMessage() {
+    const text = input.trim()
+    if (!text || loading) return
+
+    const userMsg = { role: 'user', content: text }
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
+    setInput('')
+    setLoading(true)
+    setActive(true)
+
+    try {
+      // Filter out the initial greeting (it's static, not from Claude)
+      const apiMessages = newMessages
+        .slice(1) // skip initial assistant greeting
+        .map(m => ({ role: m.role, content: m.content }))
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: apiMessages,
+          sessionId,
+          userName: userInfo?.name,
+          userGender: userInfo?.gender,
+        }),
       })
       const data = await res.json()
-      console.log('[CareerPath] response:', data)
 
       if (!res.ok || data.error) {
-        setError(data.error || '分析失败，请稍后重试')
-        setStep('form')
+        setMessages(prev => [...prev, { role: 'assistant', content: `抱歉，出错了：${data.error || '请稍后重试'}` }])
         return
       }
 
-      clearInterval(loadingTimerRef.current)
-      setCareers(data.careers || [])
-      setJobId(data.jobId || null)
-      setEmailStatus('pending')
-      setStep('result')
-    } catch (err) {
-      console.error('[CareerPath] error:', err)
-      setError(err.message || '分析失败，请稍后重试')
-      setStep('form')
+      if (data.message) {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      }
+
+      if (data.isSummaryComplete) {
+        setIsSummaryDone(true)
+        if (data.summaryData) setSummaryData(data.summaryData)
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: '网络错误，请稍后重试' }])
+    } finally {
+      setLoading(false)
     }
   }
 
-  function resetForm() {
-    clearInterval(loadingTimerRef.current)
-    clearInterval(pollTimerRef.current)
-    setStep('form'); setCareers([]); setEmailStatus('pending')
-    setJobId(null); setError(''); setLoadingMsgIdx(0)
-    setForm(EMPTY_FORM)
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  // ── LOADING ──
-  if (step === 'loading') {
-    return (
-      <div className="career-page">
-        <div className="loading-wrap">
-          <div className="spinner" />
-          <p className="loading-msg">{LOADING_MESSAGES[loadingMsgIdx]}</p>
-        </div>
-      </div>
-    )
-  }
+  if (step === 'onboarding') return <OnboardingForm onSubmit={handleOnboardingSubmit} />
 
-  // ── RESULT ──
-  if (step === 'result') {
-    const emailBadgeText = emailStatus === 'sent'
-      ? `✓ 报告已发至 ${form.email}`
-      : emailStatus === 'failed'
-      ? '⚠ 邮件发送失败，请截图保存'
-      : '⏳ 完整报告生成中，稍后发至邮箱'
-    const emailBadgeClass = emailStatus === 'sent'
-      ? 'res-email-tag'
-      : emailStatus === 'failed'
-      ? 'res-email-tag res-email-tag-warn'
-      : 'res-email-tag res-email-tag-pending'
-
-    return (
-      <div className="career-page">
-
-        <div className="res-header">
-          <div className="res-header-meta">{form.name} · {form.province} · {form.occupation}</div>
-          <div className="res-header-sub">根据你的背景，以下是最匹配的职业方向</div>
-          <div className={emailBadgeClass}>{emailBadgeText}</div>
-        </div>
-
-        <div className="res-cards-wrap">
-          {careers.length > 0 ? (
-            <div className="res-cards-grid">
-              {careers.map((c, i) => {
-                const safeEmoji = c.emoji && /^\p{Emoji}/u.test(c.emoji) ? c.emoji : '💼'
-                return (
-                <div key={i} className="res-card">
-                  <div className="res-card-emoji">{getCareerEmoji(c.name, safeEmoji)}</div>
-                  <div className="res-card-name">{c.name}</div>
-                  <div className="res-card-reason">{c.match_reason}</div>
-                  <div className="res-card-data">
-                    <span>⏱ {c.time}</span>
-                    <span>💰 {c.cost}</span>
-                    <span>📈 {c.salary}</span>
-                  </div>
-                </div>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="res-empty">数据解析失败，请查收邮件中的完整报告</div>
-          )}
-        </div>
-
-        <div className="res-bottom">
-          <p className="res-bottom-note">完整认证步骤和行动清单将发送至你的邮箱</p>
-          <button className="btn-outline" onClick={resetForm}>重新规划</button>
-          <div className="res-sources">
-            <a href="https://www.skilledtradesontario.ca" target="_blank" rel="noopener">Skilled Trades Ontario</a>
-            &nbsp;·&nbsp;<a href="https://www.cno.org" target="_blank" rel="noopener">CNO</a>
-            &nbsp;·&nbsp;<a href="https://www.cpaontario.ca" target="_blank" rel="noopener">CPA Ontario</a>
-            &nbsp;·&nbsp;<a href="https://www.fsrao.ca" target="_blank" rel="noopener">FSRA</a>
-            &nbsp;·&nbsp;<a href="https://www.jobbank.gc.ca" target="_blank" rel="noopener">Job Bank Canada</a>
-          </div>
-        </div>
-
-      </div>
-    )
-  }
-
-  // ── FORM ──
   return (
-    <div className="career-page">
-      <div className="career-header">
-        <h1>加拿大职业路径规划</h1>
-        <p>输入你的背景，AI帮你找到在加拿大的职业方向</p>
+    <div className="chat-root">
+      {/* Header */}
+      <div className="chat-header">
+        <div className="chat-header-inner">
+          <div className="chat-header-left">
+            <span className="chat-logo">Think<span>Make</span></span>
+            <span className="chat-logo-sub">AI 职业规划</span>
+          </div>
+          <Link href="/quick" className="chat-nav-link">30秒快速版 →</Link>
+        </div>
+        <div className={`chat-progress-bar${active ? ' chat-progress-active' : ''}`}>
+          <div className="chat-progress-fill" />
+        </div>
       </div>
 
-      <div className="career-container">
-        <Link href="/" className="career-back">← 返回首页</Link>
-        {error && <div className="error-box">{error}</div>}
-
-        <p className="form-required-note">* 为必填项</p>
-        <form onSubmit={handleSubmit}>
-
-          <div className="form-section">
-            <label className="form-label">在中国从事的职业<Req /></label>
-            <input className="form-input" type="text"
-              placeholder="例如：护士、电工、会计师、厨师"
-              value={form.occupation} onChange={e => set('occupation', e.target.value)} />
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">从事年限<Req /></label>
-            <div className="radio-grid radio-grid-3">
-              {EXPERIENCE_OPTIONS.map(opt => (
-                <div key={opt} style={{ textAlign: 'center' }}
-                  className={`radio-card${form.experience_years === opt ? ' selected' : ''}`}
-                  onClick={() => set('experience_years', opt)}>{opt}</div>
-              ))}
+      {/* Messages */}
+      <div className="chat-messages">
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-msg-wrap ${msg.role === 'user' ? 'chat-msg-wrap-user' : 'chat-msg-wrap-ai'}`}>
+            {msg.role === 'assistant' && <div className="chat-avatar">🤖</div>}
+            <div className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
+              <div className="chat-bubble-text" dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
             </div>
           </div>
+        ))}
 
-          <div className="form-section">
-            <label className="form-label">最高学历<Req /></label>
-            <div className="radio-grid radio-grid-4">
-              {EDUCATION_OPTIONS.map(opt => (
-                <div key={opt} style={{ textAlign: 'center' }}
-                  className={`radio-card${form.education === opt ? ' selected' : ''}`}
-                  onClick={() => set('education', opt)}>{opt}</div>
-              ))}
+        {loading && (
+          <div className="chat-msg-wrap chat-msg-wrap-ai">
+            <div className="chat-avatar">🤖</div>
+            <div className="chat-bubble chat-bubble-ai">
+              <div className="chat-typing"><span /><span /><span /></div>
             </div>
           </div>
+        )}
 
-          <div className="form-section">
-            <label className="form-label">目前状态<Req /></label>
-            <div className="radio-grid">
-              {STATUS_OPTIONS.map(opt => (
-                <div key={opt}
-                  className={`radio-card${form.current_status === opt ? ' selected' : ''}`}
-                  onClick={() => set('current_status', opt)}>{opt}</div>
-              ))}
-            </div>
-          </div>
+        {isSummaryDone && (
+          <SummaryView
+            data={summaryData}
+            userName={userInfo?.name}
+            userEmail={userInfo?.email}
+            sessionId={sessionId}
+          />
+        )}
 
-          <div className="form-section">
-            <label className="form-label">目前所在省份<Req /></label>
-            <select className="form-select" value={form.province}
-              onChange={e => set('province', e.target.value)}>
-              {PROVINCES.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">英语水平<Req /></label>
-            <div className="radio-grid">
-              {ENGLISH_OPTIONS.map(opt => (
-                <div key={opt.value}
-                  className={`radio-card${form.english === opt.value ? ' selected' : ''}`}
-                  onClick={() => set('english', opt.value)}>{opt.desc}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">
-              除主要职业外，你还有哪些相关经验？
-              <span className="form-label-opt">（选填，可多选）</span>
-            </label>
-            <div className="skills-grid">
-              {SKILLS_LIST.map(skill => (
-                <div key={skill}
-                  className={`skill-tag${form.skills.includes(skill) ? ' selected' : ''}`}
-                  onClick={() => toggleSkill(skill)}>{skill}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">学习方式<Req /></label>
-            <div className="radio-grid">
-              {STUDY_OPTIONS.map(opt => (
-                <div key={opt}
-                  className={`radio-card${form.study_mode === opt ? ' selected' : ''}`}
-                  onClick={() => set('study_mode', opt)}>{opt}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">可接受总周期<Req /></label>
-            <div className="radio-grid">
-              {TIMELINE_OPTIONS.map(opt => (
-                <div key={opt}
-                  className={`radio-card${form.total_timeline === opt ? ' selected' : ''}`}
-                  onClick={() => set('total_timeline', opt)}>{opt}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">可用预算<Req /></label>
-            <div className="radio-grid radio-grid-3">
-              {BUDGET_OPTIONS.map(opt => (
-                <div key={opt} style={{ textAlign: 'center', fontSize: '13px' }}
-                  className={`radio-card${form.budget === opt ? ' selected' : ''}`}
-                  onClick={() => set('budget', opt)}>{opt}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <label className="form-label">最大的顾虑是什么？<Req /></label>
-            <div className="radio-grid radio-grid-2">
-              {CONCERN_OPTIONS.map(opt => (
-                <div key={opt}
-                  className={`radio-card${form.concern === opt ? ' selected' : ''}`}
-                  onClick={() => set('concern', opt)}>{opt}</div>
-              ))}
-            </div>
-          </div>
-
-          <div className="contact-section">
-            <div className="contact-section-title">留下联系方式，完整报告发到你邮箱</div>
-            <div className="contact-section-sub">完整认证步骤和行动清单将发送至邮箱</div>
-            <div className="form-section" style={{ marginBottom: '16px' }}>
-              <label className="form-label">姓名<Req /></label>
-              <input className="form-input" type="text" placeholder="你的名字"
-                value={form.name} onChange={e => set('name', e.target.value)} />
-            </div>
-            <div className="form-section" style={{ marginBottom: '16px' }}>
-              <label className="form-label">称谓<Req /></label>
-              <div className="radio-grid radio-grid-3">
-                {SALUTATION_OPTIONS.map(opt => (
-                  <div key={opt} style={{ textAlign: 'center' }}
-                    className={`radio-card${form.salutation === opt ? ' selected' : ''}`}
-                    onClick={() => set('salutation', opt)}>{opt}</div>
-                ))}
-              </div>
-            </div>
-            <div className="form-section" style={{ marginBottom: '16px' }}>
-              <label className="form-label">邮箱<Req /></label>
-              <input className="form-input" type="email" placeholder="your@email.com"
-                value={form.email} onChange={e => set('email', e.target.value)} />
-            </div>
-            <div className="form-section" style={{ marginBottom: 0 }}>
-              <label className="form-label">手机号</label>
-              <input className="form-input" type="tel" placeholder="647-xxx-xxxx（选填）"
-                value={form.phone} onChange={e => set('phone', e.target.value)} />
-              <p className="form-hint">选填 · 用于培训机构与你直接联系</p>
-            </div>
-          </div>
-
-          <button type="submit" className="submit-btn">开始分析 →</button>
-          <p className="submit-hint">分析通常需要15–30秒，请稍候</p>
-        </form>
+        <div ref={messagesEndRef} />
       </div>
+
+      {/* Input */}
+      {!isSummaryDone && (
+        <div className="chat-input-wrap">
+          <div className="chat-input-inner">
+            <textarea
+              ref={textareaRef}
+              className="chat-textarea"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="输入你的回答，按 Enter 发送..."
+              rows={1}
+              disabled={loading}
+            />
+            <button
+              className={`chat-send-btn${(!input.trim() || loading) ? ' chat-send-btn-disabled' : ''}`}
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </div>
+          <div className="chat-input-hint">Enter 发送 · Shift+Enter 换行</div>
+        </div>
+      )}
     </div>
   )
 }
