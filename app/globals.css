@@ -1202,22 +1202,21 @@ footer {
 }
 
 /* ── CHAT V2 (light theme) ── */
-:root { --keyboard-height: 0px; }
-
 .chat-root {
+  position: fixed;
+  top: 60px; /* below fixed nav */
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 60px);
-  margin-top: 60px;
   background: #F8F9FA;
   color: #1A1A1A;
   overflow: hidden;
-  /* On mobile, shrink when keyboard is up */
-  max-height: calc(100dvh - 60px - var(--keyboard-height, 0px));
 }
-/* Onboarding form also needs nav offset */
+/* Onboarding form: normal flow below fixed nav */
 .onboard-root {
-  min-height: calc(100dvh - 60px);
+  min-height: calc(100svh - 60px);
   margin-top: 60px;
 }
 
@@ -1259,6 +1258,7 @@ footer {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 20px 12px;
   display: flex;
   flex-direction: column;
@@ -1268,6 +1268,8 @@ footer {
   width: 100%;
   margin: 0 auto;
   align-self: center;
+  /* Prevent iOS rubber-band from hiding content */
+  overscroll-behavior-y: contain;
 }
 .chat-messages::-webkit-scrollbar { width: 4px; }
 .chat-messages::-webkit-scrollbar-track { background: transparent; }
@@ -1326,7 +1328,8 @@ footer {
   background: #FFFFFF;
   border-top: 1px solid #E5E7EB;
   padding: 10px 20px;
-  padding-bottom: max(10px, var(--keyboard-height, 0px));
+  /* Safe area for notch devices */
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 .chat-input-inner {
   display: flex; gap: 8px; align-items: flex-end;

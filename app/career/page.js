@@ -295,30 +295,12 @@ export default function ChatPage() {
     if (!loading && step === 'chat') textareaRef.current?.focus()
   }, [loading, step])
 
-  // Handle iOS Safari / Android keyboard resize via visualViewport
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const viewport = window.visualViewport
-    if (!viewport) return
-
-    const handleResize = () => {
-      const keyboardHeight = Math.max(0, window.innerHeight - viewport.height)
-      document.documentElement.style.setProperty('--keyboard-height', keyboardHeight + 'px')
-      // Scroll to bottom when keyboard appears
-      if (keyboardHeight > 50) {
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-      }
-    }
-
-    viewport.addEventListener('resize', handleResize)
-    viewport.addEventListener('scroll', handleResize)
-    return () => {
-      viewport.removeEventListener('resize', handleResize)
-      viewport.removeEventListener('scroll', handleResize)
-    }
-  }, [])
+  // Scroll to bottom when keyboard appears (focus on textarea)
+  function handleInputFocus() {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 300)
+  }
 
   function handleOnboardingSubmit(info) {
     setUserInfo(info)
@@ -440,6 +422,7 @@ export default function ChatPage() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
               placeholder="输入你的回答，按 Enter 发送..."
               rows={1}
               disabled={loading}
