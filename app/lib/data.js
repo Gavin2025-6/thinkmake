@@ -9,7 +9,11 @@ export const tactics = tacticsData.tactics
 export function getCasesSummary() {
   return cases.map(c => {
     const quotes = c.user_quotes?.slice(0, 1).map(q => `"${q}"`).join('') || ''
-    return `[案例${c.id}] ${c.headline} | 背景:${c.user_profile.background},${c.user_profile.city} | 路径:${c.career_path.previous}→${c.career_path.current} | 薪资:${c.career_path.salary} | 关键决策:${c.key_decision_point}${quotes ? ` | 原话:${quotes}` : ''}`
+    const cp = c.career_path || {}
+    const current = cp.current || cp.current_main || cp.second_offer || cp.decision_status || '未明确'
+    const salary = cp.salary || '未透露'
+    const previous = cp.previous || '未明确'
+    return `[案例${c.id}] ${c.headline} | 背景:${c.user_profile?.background || ''},${c.user_profile?.city || ''} | 路径:${previous}→${current} | 薪资:${salary} | 关键决策:${c.key_decision_point || ''}${quotes ? ` | 原话:${quotes}` : ''}`
   }).join('\n')
 }
 
