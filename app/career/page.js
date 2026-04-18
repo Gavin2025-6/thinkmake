@@ -206,6 +206,7 @@ function OnboardingForm({ onSubmit }) {
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) { setError('请填写称呼'); return }
+    if (!/^[a-zA-Z\u4e00-\u9fa5\s]+$/.test(name.trim())) { setError('请输入你的名字（中文或英文字母）'); return }
     if (!email.includes('@')) { setError('请输入有效的邮箱地址'); return }
     setError('')
     onSubmit({ name: name.trim(), gender, email: email.trim().toLowerCase(), phone, consent })
