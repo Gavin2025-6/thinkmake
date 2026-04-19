@@ -183,6 +183,8 @@ export async function POST(request) {
     })
 
     const assistantText = response.content[0]?.text || ''
+    console.log('[Chat] AI raw response:', assistantText)
+    console.log('[Chat] SUMMARY_START found:', assistantText.includes('SUMMARY_DATA_START'))
 
     // Parse structured summary JSON
     let summaryData = null

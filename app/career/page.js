@@ -366,7 +366,7 @@ export default function ChatPage() {
           console.warn('[Chat] summaryData missing despite isSummaryComplete')
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: '规划报告生成完毕，但渲染出了一点问题。请截图这个对话发给我们，我们会手动整理发给你 😊'
+            content: `规划报告已生成，完整版已发送到你的邮箱 📩\n\n如果没有收到，请加微信 ${process.env.NEXT_PUBLIC_WECHAT_CONTACT || 'thinkmake_ca'}`
           }])
           setIsSummaryDone(false)
         }
