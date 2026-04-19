@@ -1306,6 +1306,22 @@ footer {
 }
 .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
 .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+.summary-generating { padding: 4px 0; }
+.summary-generating-text { font-size: 13px; color: #6B7280; margin-bottom: 8px; }
+.summary-generating-bar { height: 3px; background: #E5E7EB; border-radius: 2px; overflow: hidden; width: 200px; }
+.summary-generating-fill {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, #7C3AED, #a855f7);
+  border-radius: 2px;
+  animation: summary-slide 1.8s ease-in-out infinite;
+}
+@keyframes summary-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
 @keyframes chat-bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
   30% { transform: translateY(-6px); opacity: 1; }

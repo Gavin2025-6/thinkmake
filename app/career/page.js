@@ -280,6 +280,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [active, setActive] = useState(false) // progress bar pulse
+  const [summaryGenerating, setSummaryGenerating] = useState(false)
   const [sessionId] = useState(() => `s_${Date.now()}_${Math.random().toString(36).slice(2)}`)
   const [summaryData, setSummaryData] = useState(null)
   const [isSummaryDone, setIsSummaryDone] = useState(false)
@@ -295,6 +296,13 @@ export default function ChatPage() {
   useEffect(() => {
     if (!loading && step === 'chat') textareaRef.current?.focus()
   }, [loading, step])
+
+  // Show "generating summary" message if loading takes more than 6s
+  useEffect(() => {
+    if (!loading) { setSummaryGenerating(false); return }
+    const t = setTimeout(() => setSummaryGenerating(true), 6000)
+    return () => clearTimeout(t)
+  }, [loading])
 
   // Scroll to bottom when keyboard appears (focus on textarea)
   function handleInputFocus() {
@@ -338,6 +346,7 @@ export default function ChatPage() {
         }),
       })
       const data = await res.json()
+      console.log('[Chat] response:', { isSummaryComplete: data.isSummaryComplete, hasSummaryData: !!data.summaryData, message: data.message?.slice(0, 80) })
 
       if (!res.ok || data.error) {
         setMessages(prev => [...prev, { role: 'assistant', content: `抱歉，出错了：${data.error || '请稍后重试'}` }])
@@ -350,12 +359,24 @@ export default function ChatPage() {
 
       if (data.isSummaryComplete) {
         setIsSummaryDone(true)
-        if (data.summaryData) setSummaryData(data.summaryData)
+        if (data.summaryData) {
+          setSummaryData(data.summaryData)
+        } else {
+          // JSON parse failed on backend — show fallback message so user isn't left with blank
+          console.warn('[Chat] summaryData missing despite isSummaryComplete')
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: '规划报告生成完毕，但渲染出了一点问题。请截图这个对话发给我们，我们会手动整理发给你 😊'
+          }])
+          setIsSummaryDone(false)
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error('[Chat] fetch error:', err)
       setMessages(prev => [...prev, { role: 'assistant', content: '网络错误，请稍后重试' }])
     } finally {
       setLoading(false)
+      setActive(false)
     }
   }
 
@@ -396,7 +417,14 @@ export default function ChatPage() {
           <div className="chat-msg-wrap chat-msg-wrap-ai">
             <div className="chat-avatar">🤖</div>
             <div className="chat-bubble chat-bubble-ai">
-              <div className="chat-typing"><span /><span /><span /></div>
+              {summaryGenerating ? (
+                <div className="summary-generating">
+                  <div className="summary-generating-text">正在为你生成专属规划，通常需要 20-30 秒...</div>
+                  <div className="summary-generating-bar"><div className="summary-generating-fill" /></div>
+                </div>
+              ) : (
+                <div className="chat-typing"><span /><span /><span /></div>
+              )}
             </div>
           </div>
         )}
