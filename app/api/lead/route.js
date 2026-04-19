@@ -60,7 +60,7 @@ export async function POST(request) {
         : '你的加拿大职业规划报告来了 🍁'
 
       const result = await resend.emails.send({
-        from: 'ThinkMake CareerPath <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM_EMAIL || 'ThinkMake CareerPath <onboarding@resend.dev>',
         to: normalizedEmail,
         subject,
         html,

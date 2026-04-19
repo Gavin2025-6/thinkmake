@@ -377,7 +377,7 @@ export async function POST(request) {
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 4000,
       system: buildSystemPrompt(userName, userGender),
       messages,
     })
@@ -389,28 +389,28 @@ export async function POST(request) {
     let isSummaryComplete = false
     let cleanedText = assistantText
 
-    const summaryMatch = assistantText.match(/SUMMARY_DATA_START\n([\s\S]*?)\nSUMMARY_DATA_END/)
+    // Use \s* so extra blank lines around the markers don't break the match
+    const summaryMatch = assistantText.match(/SUMMARY_DATA_START\s*([\s\S]*?)\s*SUMMARY_DATA_END/)
     if (summaryMatch) {
       try {
         summaryData = JSON.parse(summaryMatch[1])
         isSummaryComplete = true
-        // Strip the JSON block and marker from displayed text
         cleanedText = assistantText
-          .replace(/\nSUMMARY_DATA_START[\s\S]*?SUMMARY_DATA_END\n?/m, '')
+          .replace(/\s*SUMMARY_DATA_START[\s\S]*?SUMMARY_DATA_END\s*/g, '\n')
           .replace(/SUMMARY_COMPLETE:\{[^}]+\}\s*$/m, '')
           .trim()
       } catch (e) {
         console.error('[Chat] Failed to parse summary JSON:', e.message)
-        // Fallback: still mark as complete even if JSON parse failed
+        console.error('[Chat] Raw block:', summaryMatch[1].slice(0, 200))
         isSummaryComplete = true
         cleanedText = assistantText
-          .replace(/SUMMARY_DATA_START[\s\S]*?SUMMARY_DATA_END\n?/m, '')
+          .replace(/\s*SUMMARY_DATA_START[\s\S]*?SUMMARY_DATA_END\s*/g, '\n')
           .replace(/SUMMARY_COMPLETE:\{[^}]+\}\s*$/m, '')
           .trim()
       }
     } else if (assistantText.includes('SUMMARY_COMPLETE:')) {
       isSummaryComplete = true
-      cleanedText = assistantText.replace(/\nSUMMARY_COMPLETE:\{[^}]+\}\s*$/m, '').trim()
+      cleanedText = assistantText.replace(/\s*SUMMARY_COMPLETE:\{[^}]+\}\s*$/m, '').trim()
     }
 
     if (sessionId && process.env.DATABASE_URL) {
