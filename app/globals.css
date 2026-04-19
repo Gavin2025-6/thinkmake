@@ -1487,6 +1487,12 @@ footer {
 }
 .resource-link:hover { background: #EDE9FE; }
 
+.summary-email-nudge {
+  background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px;
+  padding: 12px 16px; font-size: 13px; color: #166534; font-weight: 500;
+  margin-bottom: 12px; text-align: center;
+}
+
 .lead-final-card {
   background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px;
   padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);

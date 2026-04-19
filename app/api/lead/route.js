@@ -90,7 +90,7 @@ function buildSummaryEmail(userName, data) {
   const wechat = process.env.WECHAT_CONTACT || 'thinkmake_ca'
   const greeting = userName ? `你好 ${userName}，` : '你好，'
 
-  // ── Recommendations ──────────────────────────────────────────
+  // ── Recommendations (full: includes details) ─────────────────
   const recsHtml = (data?.recommendations || []).map(rec => {
     const matchColor = rec.matchPct >= 80 ? '#065f46' : '#92400e'
     const matchBg    = rec.matchPct >= 80 ? '#d1fae5' : '#fef3c7'
@@ -101,16 +101,41 @@ function buildSummaryEmail(userName, data) {
         <span style="background:${matchBg};color:${matchColor};border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700">匹配度 ${rec.matchPct}%</span>
       </div>
       <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.6">${esc(rec.why)}</p>
-      <table style="border-collapse:collapse;font-size:13px;color:#6b7280">
+      <table style="border-collapse:collapse;font-size:13px;color:#6b7280;margin-bottom:10px">
         <tr>
           <td style="padding:2px 16px 2px 0">⏱ ${esc(rec.timeline)}</td>
           <td style="padding:2px 16px 2px 0">💰 ${esc(rec.cost)}</td>
           <td style="padding:2px 0">📈 ${esc(rec.income)}</td>
         </tr>
       </table>
-      ${rec.sourceUrl ? `<p style="margin:8px 0 0"><a href="${rec.sourceUrl}" style="color:#7c3aed;font-size:12px">数据来源：${esc(rec.sourceName || rec.sourceUrl)}</a></p>` : ''}
+      ${rec.sourceUrl ? `<p style="margin:0 0 10px"><a href="${rec.sourceUrl}" style="color:#7c3aed;font-size:12px">数据来源：${esc(rec.sourceName || rec.sourceUrl)}</a></p>` : ''}
+      ${rec.details ? `
+      <div style="background:#f9fafb;border-left:3px solid #7c3aed;border-radius:0 6px 6px 0;padding:10px 14px;margin-top:4px">
+        <div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">详细路径</div>
+        <p style="margin:0;font-size:13px;color:#374151;line-height:1.7">${esc(rec.details)}</p>
+      </div>` : ''}
     </div>`
   }).join('')
+
+  // ── Cases ─────────────────────────────────────────────────────
+  const casesHtml = (data?.cases || []).map(c => `
+    <div style="border-left:3px solid #e5e7eb;padding:8px 14px;margin-bottom:10px">
+      <p style="margin:0 0 4px;font-size:14px;color:#374151;line-height:1.6">${esc(c.description)}</p>
+      ${c.quote ? `<p style="margin:4px 0;font-size:13px;color:#6b7280;font-style:italic">"${esc(c.quote)}"</p>` : ''}
+      ${c.lesson ? `<p style="margin:4px 0 0;font-size:13px;color:#7c3aed">→ ${esc(c.lesson)}</p>` : ''}
+    </div>`).join('')
+
+  // ── Certainty ─────────────────────────────────────────────────
+  const certaintyHtml = (() => {
+    const c = data?.certainty
+    if (!c) return ''
+    const rows = [
+      ...(c.sure || []).map(s => `<div style="padding:3px 0;font-size:13px;color:#374151">${esc(s)}</div>`),
+      ...(c.unsure || []).map(s => `<div style="padding:3px 0;font-size:13px;color:#374151">${esc(s)}</div>`),
+      ...(c.professional || []).map(s => `<div style="padding:3px 0;font-size:13px;color:#374151">${esc(s)}</div>`),
+    ]
+    return rows.join('')
+  })()
 
   // ── Next Steps ───────────────────────────────────────────────
   const stepsHtml = (data?.nextSteps || []).map((s, i) => `
@@ -135,12 +160,12 @@ function buildSummaryEmail(userName, data) {
   <!-- Header -->
   <div style="background:#ffffff;border-radius:12px;padding:20px 24px;margin-bottom:16px;border:1px solid #e5e7eb">
     <div style="font-size:20px;font-weight:800;color:#1a1a1a">Think<span style="color:#7c3aed">Make</span> CareerPath</div>
-    <div style="color:#9ca3af;font-size:12px;margin-top:2px">加拿大华人职业规划</div>
+    <div style="color:#9ca3af;font-size:12px;margin-top:2px">加拿大华人职业规划 · 完整报告</div>
   </div>
 
   <!-- Greeting -->
   <div style="background:#f3f0ff;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-size:14px;color:#374151;line-height:1.6">
-    ${greeting}感谢使用 ThinkMake CareerPath！以下是根据你的对话生成的专属职业规划报告。
+    ${greeting}这是你的加拿大职业规划完整报告，包含详细路径和行动清单。
   </div>
 
   <!-- Portrait -->
@@ -155,6 +180,20 @@ function buildSummaryEmail(userName, data) {
   <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
     <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:14px">推荐方向</div>
     ${recsHtml}
+  </div>` : ''}
+
+  <!-- Cases -->
+  ${casesHtml ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px">📚 真实案例参考</div>
+    ${casesHtml}
+  </div>` : ''}
+
+  <!-- Certainty -->
+  ${certaintyHtml ? `
+  <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px">确定性分级</div>
+    ${certaintyHtml}
   </div>` : ''}
 
   <!-- Next Steps -->

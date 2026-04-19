@@ -17,9 +17,8 @@ function renderMd(text) {
     .replace(/\n/g, '<br>')
 }
 
-// ── Recommendation Card ───────────────────────────────────────
+// ── Recommendation Card (web: simple view, no expand) ────────
 function RecCard({ rec }) {
-  const [open, setOpen] = useState(false)
   const isHigh = rec.matchPct >= 80
   return (
     <div className="rec-card">
@@ -40,10 +39,6 @@ function RecCard({ rec }) {
           数据来源：{rec.sourceName || rec.sourceUrl}
         </a>
       )}
-      <button className="rec-expand" onClick={() => setOpen(o => !o)}>
-        {open ? '收起 ▲' : '了解详细路径 ▼'}
-      </button>
-      {open && <p className="rec-details">{rec.details}</p>}
     </div>
   )
 }
@@ -160,6 +155,11 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
           </div>
         </div>
       )}
+
+      {/* Email nudge */}
+      <div className="summary-email-nudge">
+        📩 包含详细路径和行动清单的完整报告已发送到你的邮箱
+      </div>
 
       {/* Lead / email confirmation */}
       <div className="lead-final-card">
