@@ -1,0 +1,407 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-04-17",
+  "description": "ThinkMake CareerPath 资源库 v2 - 在 v1 基础上新增'政府工作'、'PM 面试'、'保险行业'、'水管工'、'电工赛道分化'5 大模块",
+  "verification_principle": "所有链接均通过 web_search 验证为官方/权威来源",
+
+  "求职平台": {
+    "_说明": "按用户场景分类，每个平台标注真实定位",
+    "通用_所有人都该用": [
+      {"name": "Job Bank Canada", "url": "https://www.jobbank.gc.ca", "type": "政府官方", "适合": "所有新移民"},
+      {"name": "LinkedIn", "url": "https://www.linkedin.com", "type": "国际综合+社交", "适合": "白领、专业岗"},
+      {"name": "Indeed Canada", "url": "https://ca.indeed.com", "type": "综合", "适合": "所有人，岗位最多"},
+      {"name": "Glassdoor", "url": "https://www.glassdoor.ca", "type": "综合+公司评价", "适合": "想了解公司内幕"}
+    ],
+    "白领_财务会计": [
+      {"name": "Robert Half", "url": "https://www.roberthalf.com/ca/en", "type": "专业猎头", "强项": "加拿大财务/会计/行政岗最大猎头"},
+      {"name": "CPA Canada Job Board", "url": "https://www.cpacanada.ca", "type": "行业协会"}
+    ],
+    "白领_IT科技": [
+      {"name": "LinkedIn", "url": "https://www.linkedin.com"},
+      {"name": "Dice", "url": "https://www.dice.com", "强项": "北美 IT 招聘老牌"},
+      {"name": "Indeed", "url": "https://ca.indeed.com"}
+    ],
+    "教育类": [
+      {"name": "Education Canada", "url": "https://www.educationcanada.com", "强项": "加拿大最大教育类招聘"},
+      {"name": "学校官网直接申请", "url": "各学校官网"}
+    ],
+    "医疗护理": [
+      {"name": "MedHunters", "url": "https://www.medhunters.com", "强项": "总部多伦多，覆盖北美医疗"},
+      {"name": "各省卫生局官网", "url": "Ontario Health / Vancouver Coastal Health 等"}
+    ],
+    "蓝领_技工类": [
+      {"name": "Job Bank", "url": "https://www.jobbank.gc.ca"},
+      {"name": "Apprenticesearch.com", "url": "https://www.apprenticesearch.com", "强项": "学徒专属匹配"},
+      {"name": "ZipRecruiter", "url": "https://www.ziprecruiter.ca"}
+    ],
+    "餐饮服务业": [
+      {"name": "Indeed", "url": "https://ca.indeed.com"},
+      {"name": "店家直接问", "url": "线下走访", "强项": "中餐馆、奶茶店、华人超市岗位多不上网"}
+    ],
+    "非营利组织": [
+      {"name": "Charity Village", "url": "https://charityvillage.com", "强项": "加拿大最大 NGO 招聘"}
+    ],
+    "魁北克法语区": [
+      {"name": "Jobillico", "url": "https://www.jobillico.com"}
+    ],
+    "学生应届": [
+      {"name": "TalentEgg", "url": "https://talentegg.ca"}
+    ]
+  },
+
+  "新移民免费就业服务": {
+    "_说明": "政府资助免费服务，多数需要 PR 或 Convention Refugee。提供简历辅导、面试训练、行业匹配、人脉引荐。",
+    "安省_多伦多大区": [
+      {
+        "name": "JVS Toronto",
+        "url": "https://www.jvstoronto.org",
+        "phone": "416-787-1151",
+        "服务": "1对1就业咨询、简历辅导、Bridge Training、TRIEC Mentoring",
+        "亮点": "TRIEC Mentoring Partnership——免费匹配加拿大本地行业导师"
+      },
+      {
+        "name": "ACCES Employment",
+        "url": "https://accesemployment.ca",
+        "服务": "针对国际专业人才的桥梁项目",
+        "亮点": "Speed Mentoring——一晚上能见 5-10 个行业内人士"
+      },
+      {
+        "name": "YMCA of Greater Toronto",
+        "url": "https://ymcagta.org",
+        "服务": "就业培训、带薪实习"
+      },
+      {
+        "name": "Skills for Change",
+        "url": "https://www.skillsforchange.org",
+        "服务": "新移民职业训练"
+      },
+      {
+        "name": "TNO Toronto",
+        "url": "https://tno-toronto.org",
+        "服务": "免费技术培训：Coding for Future、Trades Connect"
+      },
+      {
+        "name": "TRIEC",
+        "url": "https://triec.ca",
+        "服务": "GTA 雇主网络中心，专门帮新移民对接"
+      },
+      {
+        "name": "Volunteer Toronto",
+        "url": "https://volunteertoronto.ca",
+        "address": "344 Bloor Street West, Suite 404, Toronto, ON M5S 3A7",
+        "phone": "416-961-6888",
+        "服务": "加拿大最大志愿者中心，有专门给新移民的活动"
+      }
+    ],
+    "BC省": [
+      {"name": "ISSofBC", "url": "https://issbc.org", "服务": "新移民全方位服务"},
+      {"name": "MOSAIC BC", "url": "https://www.mosaicbc.org", "服务": "就业服务+桥梁项目"},
+      {"name": "S.U.C.C.E.S.S.", "url": "https://successbc.ca", "服务": "华人新移民服务（含中文）"}
+    ],
+    "阿尔伯塔省": [
+      {"name": "CCIS", "url": "https://www.ccisab.ca", "服务": "卡尔加里"},
+      {"name": "ERIEC", "url": "https://www.eriec.ca", "服务": "埃德蒙顿"}
+    ],
+    "魁北克省": [
+      {"name": "Services Québec", "url": "https://www.quebec.ca/en/employment", "服务": "魁省政府就业服务"}
+    ],
+    "全国通用": [
+      {"name": "Settlement.org", "url": "https://settlement.org", "服务": "新移民信息门户"}
+    ]
+  },
+
+  "学历职业认证": {
+    "_说明": "新移民必经流程",
+    "学历认证_综合": [
+      {"name": "WES Canada", "url": "https://www.wes.org/ca", "费用": "$220-280 CAD", "周期": "7-20 工作日"},
+      {"name": "ICAS Canada", "url": "https://www.icascanada.ca"},
+      {"name": "IQAS (Alberta)", "url": "https://www.alberta.ca/iqas-overview.aspx"}
+    ],
+    "技工认证_安省": [
+      {
+        "name": "Skilled Trades Ontario",
+        "url": "https://www.skilledtradesontario.ca",
+        "phone": "647-847-3000 / 1-855-299-0028",
+        "服务": "140+ 种技工的认证、学徒、Certificate of Qualification 考试",
+        "亮点": "可查 Public Register 验证师傅资质"
+      }
+    ],
+    "技工认证_BC": [
+      {"name": "SkilledTradesBC", "url": "https://skilledtradesbc.ca"}
+    ],
+    "技工认证_阿省": [
+      {"name": "Alberta Apprenticeship", "url": "https://tradesecrets.alberta.ca"}
+    ],
+    "护士认证": [
+      {"name": "NNAS", "url": "https://www.nnas.ca", "服务": "国际护士第一步认证"},
+      {"name": "CNO (安省)", "url": "https://www.cno.org"},
+      {"name": "BCCNM (BC)", "url": "https://www.bccnm.ca"}
+    ],
+    "会计认证_CPA": [
+      {"name": "CPA Canada", "url": "https://www.cpacanada.ca"},
+      {"name": "CPA Ontario", "url": "https://www.cpaontario.ca"}
+    ],
+    "工程师认证": [
+      {"name": "PEO (安省)", "url": "https://www.peo.on.ca", "warning": "国内工程师转 P.Eng 周期长（5-7 年）、通过率不高"},
+      {"name": "Engineers Canada", "url": "https://engineerscanada.ca"}
+    ],
+    "教师认证_安省": [
+      {"name": "OCT", "url": "https://www.oct.ca"}
+    ]
+  },
+
+  "电工赛道完整分化_重要": {
+    "_说明": "加拿大电工不是一个职业，是 3 个完全不同的执照。选错 = 走错路。",
+    "三大执照对比": {
+      "309A_建筑维护电工": {
+        "name": "Construction & Maintenance Electrician",
+        "工作范围": ["住宅", "商业建筑", "工业建筑（部分维修岗）", "户外建筑工地"],
+        "雇主类型": ["电工承包公司", "建筑公司", "商业楼宇维护", "部分工厂的非核心维修岗"],
+        "适合": "想要灵活性、多样化工作、想自雇、想抗经济周期",
+        "学徒时长": "9000 小时工作 + 840 小时课堂 ≈ 5 年",
+        "推荐": "默认推荐 ⭐"
+      },
+      "442A_工业电工": {
+        "name": "Industrial Electrician",
+        "工作范围": ["工厂内部", "钢铁厂、化工厂、汽车厂", "矿场", "大型工业设施"],
+        "不能做": ["建筑工地", "住宅", "商业"],
+        "雇主类型": ["dofasco", "stelco", "汽车厂", "TTC", "矿业 (Vale, Glencore)", "化工公司"],
+        "优势": "工资高、工会保护、福利好",
+        "风险": "经济下行先收缩、灵活性差、雇主集中",
+        "适合": "国内工业背景 + 想进大工厂"
+      },
+      "309C_家用农村电工": {
+        "name": "Domestic & Rural Electrician",
+        "工作范围": "最窄（住宅+农村）",
+        "适合": "很少有人选，除非有特定地理需求"
+      }
+    },
+    "决策树": {
+      "国内工业/工厂电工 + 想进大工厂": "考 442A，但要做好心理准备：进 dofasco/stelco 极难，先小工厂维修部",
+      "国内普通电工/民用电气": "考 309A（覆盖面广，抗风险），从小工程公司开始",
+      "不确定": "先 309A，工作几年后补考 442A（双证最强）"
+    },
+    "内幕信息": [
+      "dofasco/stelco 极难进：需 442A + 多年加拿大经验 + 强英语 + 工会人脉",
+      "中国工厂经验在加拿大几乎不被认可",
+      "小厂维修部是真实入门路径",
+      "TTC 多伦多公交只招 442A",
+      "自雇做电工需 309A + Master Electrician 证"
+    ]
+  },
+
+  "水管工入行_重要": {
+    "_说明": "水管工 (Plumber 306A) - 加拿大热门技工赛道",
+    "核心数据": {
+      "trade_code": "306A",
+      "noc": "7252",
+      "强制性省份": ["NS", "PEI", "NB", "QC", "ON", "SK", "AB"],
+      "Red Seal": "可跨省执业"
+    },
+    "收入": {
+      "学徒期": "$15-25/小时",
+      "持牌": "$45,000-80,000/年",
+      "时薪": "$25-45/小时",
+      "经验丰富多伦多温哥华": "$100,000+",
+      "自雇紧急维修": "更高"
+    },
+    "三种入行路径": {
+      "路径1_Pre_Apprenticeship": {
+        "例子": "CPAC 多伦多免费 18 周项目",
+        "内容": "Plumbing Basics 306A + Electrician 309A 入门 + 8 周带薪实习",
+        "费用": "完全免费（含教材、工具、安全装备）+ 完成后交通补贴",
+        "要求": ["PR 或加拿大公民", "加拿大高中文凭或海外大学文凭", "CLB Level 5", "18 周全职"],
+        "url": "https://cpac-canada.ca",
+        "推荐": "强烈推荐 ⭐"
+      },
+      "路径2_正规学校项目": {
+        "例子": "Fleming College 306A Apprenticeship Level 1",
+        "时长": "3 个 Level，每个 240 小时 + 工作经验",
+        "其他学校": ["George Brown College", "Centennial College", "Algonquin College", "BCIT"]
+      },
+      "路径3_学徒模式": {
+        "流程": "找雇主收徒 → 注册学徒 → 1560 小时工作 + 8 周培训 = 1 个 Level → 4-5 年完成 → 省级考试 → Journeyperson 牌照",
+        "补贴": "学徒期间可领 EI、女性学徒有 double 补贴"
+      }
+    },
+    "私立机构": {
+      "TETC 多伦多工程培训中心": {
+        "address": "101 Amber Street Unit 2, Markham",
+        "phone": "416-637-6286",
+        "wechat": "tetc2005a",
+        "warning": "华人私立机构，需独立评估质量"
+      }
+    },
+    "中年人考虑": [
+      "体力要求高（爬高、搬重物、长时间蹲跪）",
+      "学徒期收入低，需积蓄垫底",
+      "4-5 年学徒期对中年家庭是挑战",
+      "优势：稳重、客户信任年长水管工"
+    ]
+  },
+
+  "保险行业_新增": {
+    "_说明": "加拿大就业市场最稳定且对新移民友好的赛道之一，有 156,000+ 就业人口",
+    "三种主要执照_安省": {
+      "OTL_财产意外险": {
+        "name": "Other Than Life - 保险代理执照",
+        "监管": "FSRA",
+        "考试": "$250 / 110 道选择题 / 通过线 75%",
+        "总成本": "$746-1200",
+        "时长": "1-3 个月",
+        "案例": "案例 #009 走的路"
+      },
+      "RIBO_保险经纪": {
+        "name": "Registered Insurance Brokers of Ontario",
+        "监管": "RIBO",
+        "考试": "$250 / 90 道选择题（3 小时）/ 通过线 75%",
+        "内容": "RIB Act、汽车、财产、旅游/医疗",
+        "适合": "想做经纪人（代理多家公司产品）"
+      },
+      "LLQP_人寿保险": {
+        "name": "Life License Qualification Program",
+        "监管": "FSRA + Durham College",
+        "考试": "$264（4 个模块）/ 140 道（4 小时）/ 通过线 60%",
+        "适合": "卖人寿险、健康险、投资产品"
+      }
+    },
+    "收入参考": {
+      "保险代理_OTL": "$50,000-90,000",
+      "保险经纪_RIBO": "$40,000-200,000+（基本+提成）",
+      "人寿险代理_LLQP": "$60,000-200,000+（提成制）"
+    },
+    "加拿大主要保险公司": [
+      "Co-operators（案例 #009 入职）",
+      "Manulife", "Sun Life", "Canada Life",
+      "Intact Insurance", "Aviva Canada",
+      "Wawanesa", "Allstate Canada"
+    ],
+    "为什么对新移民友好": [
+      "考证成本低",
+      "时间短",
+      "华人客户群大",
+      "公司可报销考证费",
+      "远程考试可选",
+      "对英语要求相对低（OTL 全选择题）"
+    ],
+    "官方培训提供商": [
+      {"name": "PNC Learning", "url": "https://pnclearning.com", "费用": "OTL 课程 $149"},
+      {"name": "Insurance Institute of Ontario"},
+      {"name": "IFSE Institute（LLQP）"},
+      {"name": "Durham College（LLQP 安省考试）"},
+      {"name": "IBAO（RIBO）"}
+    ]
+  },
+
+  "工资就业数据": {
+    "_说明": "做职业规划必看的官方数据",
+    "sources": [
+      {"name": "Job Bank Wages", "url": "https://www.jobbank.gc.ca/trend-analysis/search-wages", "服务": "按 NOC 代码查工资"},
+      {"name": "Statistics Canada", "url": "https://www.statcan.gc.ca"},
+      {"name": "NOC 数据库", "url": "https://noc.esdc.gc.ca", "服务": "查 NOC 代码、定义、技能要求"}
+    ]
+  },
+
+  "求职工具": {
+    "简历优化": [
+      {"name": "Jobscan", "url": "https://www.jobscan.co", "服务": "简历 vs JD 匹配度评分"},
+      {"name": "Resume Worded", "url": "https://resumeworded.com"}
+    ],
+    "面试准备_通用": [
+      {"name": "Glassdoor 面试题库", "url": "https://www.glassdoor.ca"},
+      {"name": "Pramp", "url": "https://www.pramp.com", "服务": "免费技术面试模拟"}
+    ]
+  },
+
+  "PM_产品经理面试准备_新增": {
+    "_说明": "PM/科技岗有专门的面试结构，案例 #008 走的路",
+    "PM_面试4大类": [
+      "Behavioral (BQ) - 行为面，准备 STAR 方法",
+      "Product Sense / Product Design - 产品感",
+      "Case Study - 商业案例（核心，需专门练）",
+      "Technical / Estimation - 技术 / 估算（TPM 才有）"
+    ],
+    "免费资源": [
+      {"name": "StellarPeers", "url": "https://stellarpeers.com", "服务": "免费 mock interview + 1000+ 题"},
+      {"name": "PM Exercises", "url": "https://www.productmanagementexercises.com", "服务": "免费 30+ 题，付费 $12/月起 3000+ 题"}
+    ],
+    "付费课程": [
+      {"name": "HelloPM", "url": "https://hellopm.co"},
+      {"name": "RocketBlocks", "url": "https://www.rocketblocks.me"},
+      {"name": "IGotAnOffer", "url": "https://igotanoffer.com"}
+    ],
+    "经典书": [
+      "Cracking the PM Interview",
+      "Decode and Conquer",
+      "Hacking the PM Interview"
+    ],
+    "准备时间": "3-6 周（参考案例 #008 是 1 个月）"
+  },
+
+  "政府_公共部门工作_新增": {
+    "_说明": "被严重忽视的赛道。PR 就能申请，福利远超私企。",
+    "联邦政府": [
+      {"name": "GC Jobs", "url": "https://www.canada.ca/en/services/jobs/opportunities/government.html", "服务": "联邦政府求职官方平台"},
+      {"name": "FSWEP", "url": "https://www.canada.ca/en/public-service-commission/jobs/services/recruitment/students/federal-student-work-program.html", "服务": "联邦学生工作经验项目"}
+    ],
+    "省政府": [
+      {"name": "安省", "url": "https://www.ontario.ca/page/careers"},
+      {"name": "BC", "url": "https://www2.gov.bc.ca/gov/content/careers-myhr"},
+      {"name": "阿省", "url": "https://www.alberta.ca/jobs.aspx"},
+      {"name": "萨省", "url": "https://www.saskatchewan.ca/government/careers"}
+    ],
+    "市政府": [
+      {"name": "搜各市官网", "url": "如 toronto.ca/jobs"}
+    ],
+    "教育系统": [
+      {"name": "各教育局 School Board 官网"},
+      {"name": "Education Canada"},
+      {"name": "大学官网"}
+    ],
+    "联邦工资参考_2026": {
+      "Clerk/admin (CR-04)": "约 $56,000",
+      "Program officer (PM-01)": "约 $62,000",
+      "Admin officer (AS-01)": "约 $62,000",
+      "Financial analyst (FI-01)": "约 $75,000",
+      "IT analyst (IT-02)": "约 $86,000",
+      "Junior economist (EC-02)": "约 $63,000"
+    },
+    "额外福利": [
+      "Defined Benefit Pension（30 年退休拿 60% 工资终身、跟通胀挂钩）",
+      "全套医疗+牙医保险",
+      "起步 3 周年假，逐步涨到 5 周+",
+      "15 天病假",
+      "总薪酬比基本工资高 25-30%"
+    ]
+  },
+
+  "政策官方网站": {
+    "联邦": [
+      {"name": "IRCC", "url": "https://www.canada.ca/en/immigration-refugees-citizenship.html"},
+      {"name": "Express Entry", "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry.html"}
+    ],
+    "省提名": [
+      {"name": "OINP（安省）", "url": "https://www.ontario.ca/page/ontario-immigrant-nominee-program-oinp"},
+      {"name": "BC PNP", "url": "https://www.welcomebc.ca/Immigrate-to-B-C/B-C-Provincial-Nominee-Program"},
+      {"name": "Alberta AAIP", "url": "https://www.alberta.ca/alberta-advantage-immigration-program.aspx"},
+      {"name": "SINP（萨省）", "url": "https://www.saskatchewan.ca/residents/moving-to-saskatchewan/immigrating-to-saskatchewan"}
+    ]
+  },
+
+  "公立培训学校": {
+    "安省": [
+      {"name": "George Brown College", "url": "https://www.georgebrown.ca", "城市": "多伦多", "强项": "餐饮、护理、商业、技工"},
+      {"name": "Centennial College", "url": "https://www.centennialcollege.ca", "城市": "多伦多", "强项": "工程技术、IT"},
+      {"name": "Seneca College", "url": "https://www.senecacollege.ca", "城市": "多伦多大区", "强项": "IT、商业、传媒"},
+      {"name": "Humber College", "url": "https://humber.ca", "城市": "多伦多"},
+      {"name": "Algonquin College", "url": "https://www.algonquincollege.com", "城市": "渥太华"},
+      {"name": "Fleming College", "url": "https://flemingcollege.ca", "强项": "技工，含 306A 水管工"}
+    ],
+    "BC": [
+      {"name": "BCIT", "url": "https://www.bcit.ca", "城市": "温哥华", "强项": "技工、工程、健康"},
+      {"name": "Vancouver Community College", "url": "https://www.vcc.ca", "城市": "温哥华"}
+    ]
+  },
+
+  "私立机构_处理原则": "⚠️ 待评估。任何私立培训机构进入推荐池前必须满足：1) 有公立认证或政府认可 2) 有真实毕业生案例可查 3) 收费透明无套路 4) 不付费给我们做推荐。"
+}

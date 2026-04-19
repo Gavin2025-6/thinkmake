@@ -1,0 +1,564 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-04-17",
+  "verification_note": "所有链接均已通过 web_search 验证为官方/权威来源。培训学校等需要质量评估的资源单独标注。",
+  "structure_principle": "按用户场景分类，不按工具类型。AI 在给出建议时按场景调用。",
+
+  "求职平台": {
+    "_说明": "按用户类型和场景分类，每个平台标注真实定位",
+    "通用-所有人都该用": [
+      {
+        "name": "Job Bank Canada",
+        "url": "https://www.jobbank.gc.ca",
+        "type": "政府官方",
+        "强项": "加拿大政府运营、免费、数据权威、岗位真实度高",
+        "适合": "所有新移民，尤其是想去政府或大型雇主工作的人",
+        "提示": "免费注册 Job Match 功能，雇主主动联系你",
+        "verified": true
+      },
+      {
+        "name": "LinkedIn",
+        "url": "https://www.linkedin.com",
+        "type": "国际综合 + 社交",
+        "强项": "猎头、招聘官都在这里，白领必备",
+        "适合": "白领、专业岗、想跳槽的人",
+        "提示": "把个人资料做完整，包括加拿大本地经历，会被主动联系",
+        "verified": true
+      },
+      {
+        "name": "Indeed Canada",
+        "url": "https://ca.indeed.com",
+        "type": "国际综合",
+        "强项": "岗位数量最多，覆盖全行业全级别",
+        "适合": "所有人，尤其是中小企业岗位",
+        "提示": "注意域名是 ca.indeed.com，不是 .com",
+        "verified": true
+      },
+      {
+        "name": "Glassdoor",
+        "url": "https://www.glassdoor.ca",
+        "type": "综合 + 公司评价",
+        "强项": "可以看前员工对公司的真实评价、面试题、薪资",
+        "适合": "已经有目标公司，想了解内幕的人",
+        "提示": "用来研究公司比用来找工作更有价值",
+        "verified": true
+      }
+    ],
+
+    "白领-财务会计": [
+      {
+        "name": "Robert Half",
+        "url": "https://www.roberthalf.com/ca/en",
+        "type": "专业猎头",
+        "强项": "加拿大财务/会计/行政岗位最大猎头",
+        "适合": "有 1-3 年以上经验的财务、会计、行政人员",
+        "提示": "上传简历后会有专属顾问联系你"
+      },
+      {
+        "name": "CPA Canada Job Board",
+        "url": "https://www.cpacanada.ca",
+        "type": "行业协会",
+        "强项": "针对 CPA 持证人或在考人员的专业岗位",
+        "适合": "已经在考 CPA 或正在转 CPA 的人"
+      }
+    ],
+
+    "白领-IT 科技": [
+      {
+        "name": "LinkedIn",
+        "url": "https://www.linkedin.com",
+        "type": "国际综合",
+        "强项": "IT 岗最主流招聘渠道",
+        "适合": "所有 IT 从业者"
+      },
+      {
+        "name": "Dice",
+        "url": "https://www.dice.com",
+        "type": "IT 专业",
+        "强项": "北美 IT 招聘老牌网站",
+        "适合": "中高级开发、架构师、安全等"
+      },
+      {
+        "name": "Indeed",
+        "url": "https://ca.indeed.com",
+        "type": "综合",
+        "强项": "中小公司 IT 岗多",
+        "适合": "初级到中级 IT"
+      }
+    ],
+
+    "教育类": [
+      {
+        "name": "Education Canada",
+        "url": "https://www.educationcanada.com",
+        "type": "教育行业专属",
+        "强项": "加拿大最大的教育类招聘平台",
+        "适合": "K-12 教师、教辅、学校行政"
+      },
+      {
+        "name": "学校官网直接申请",
+        "url": "各学校官网",
+        "type": "直接渠道",
+        "强项": "学校招聘第一手信息",
+        "适合": "目标明确想进特定学校的人"
+      }
+    ],
+
+    "医疗护理": [
+      {
+        "name": "MedHunters",
+        "url": "https://www.medhunters.com",
+        "type": "医疗专业",
+        "强项": "总部多伦多，覆盖整个北美医疗岗位",
+        "适合": "护士、医技、医疗行政"
+      },
+      {
+        "name": "各省卫生局官网",
+        "url": "Ontario Health / Vancouver Coastal Health 等",
+        "type": "政府渠道",
+        "强项": "公立医院系统岗位",
+        "适合": "已通过认证的护士、医生"
+      }
+    ],
+
+    "蓝领-技工类": [
+      {
+        "name": "Job Bank",
+        "url": "https://www.jobbank.gc.ca",
+        "type": "政府",
+        "强项": "技工类、学徒类岗位多",
+        "适合": "所有想做技工的新移民"
+      },
+      {
+        "name": "Apprenticesearch.com",
+        "url": "https://www.apprenticesearch.com",
+        "type": "学徒专属",
+        "强项": "专门匹配学徒和雇主",
+        "适合": "想找学徒岗位的人"
+      },
+      {
+        "name": "ZipRecruiter",
+        "url": "https://www.ziprecruiter.ca",
+        "type": "综合",
+        "强项": "蓝领岗位多，操作简单",
+        "适合": "想快速找体力劳动岗位"
+      }
+    ],
+
+    "餐饮服务业": [
+      {
+        "name": "Indeed",
+        "url": "https://ca.indeed.com",
+        "type": "综合",
+        "强项": "餐饮岗位每日更新量大"
+      },
+      {
+        "name": "店家直接问",
+        "url": "线下走访",
+        "type": "传统",
+        "强项": "中餐馆、奶茶店、华人超市等大量岗位不上网，直接问最快",
+        "适合": "英语弱、想立即开工的人"
+      }
+    ],
+
+    "非营利组织 NGO": [
+      {
+        "name": "Charity Village",
+        "url": "https://charityvillage.com",
+        "type": "NGO 专属",
+        "强项": "加拿大最大非营利招聘平台",
+        "适合": "想做社工、社区服务、慈善机构"
+      }
+    ],
+
+    "魁北克法语区": [
+      {
+        "name": "Jobillico",
+        "url": "https://www.jobillico.com",
+        "type": "魁省综合",
+        "强项": "魁省最大本地招聘平台",
+        "适合": "在蒙特利尔/魁北克城找工作的人"
+      }
+    ],
+
+    "学生应届": [
+      {
+        "name": "TalentEgg",
+        "url": "https://talentegg.ca",
+        "type": "学生应届专属",
+        "强项": "实习、暑期工、 entry-level 岗位",
+        "适合": "在加拿大读书的学生、应届毕业生"
+      }
+    ],
+
+    "中介机构(慎用)": [
+      {
+        "name": "Randstad",
+        "url": "https://www.randstad.ca",
+        "type": "国际中介",
+        "强项": "白领蓝领都做",
+        "提示": "走中介一般是合同工或 temp，工资会被中介抽成"
+      }
+    ]
+  },
+
+  "新移民免费就业服务": {
+    "_说明": "这些是政府资助的免费服务，必须是 PR 或 Convention Refugee 才能用。提供简历辅导、面试训练、行业匹配、人脉引荐。是真正能改变命运的资源，但很多新移民不知道。",
+
+    "安省-多伦多大区": [
+      {
+        "name": "JVS Toronto",
+        "url": "https://www.jvstoronto.org",
+        "phone": "416-787-1151",
+        "服务": "1对1就业咨询、简历辅导、面试训练、Bridge Training（特定行业入行项目）、TRIEC Mentoring（导师匹配）",
+        "适合": "新移民、青年、残疾人、失业者",
+        "亮点": "TRIEC Mentoring Partnership——给你匹配一个加拿大本地行业导师，免费",
+        "verified": true
+      },
+      {
+        "name": "ACCES Employment",
+        "url": "https://accesemployment.ca",
+        "服务": "针对国际专业人才的桥梁项目（金融、IT、工程、医疗等）",
+        "亮点": "Speed Mentoring 活动——一晚上能见 5-10 个行业内人士",
+        "verified": true
+      },
+      {
+        "name": "YMCA of Greater Toronto",
+        "url": "https://ymcagta.org",
+        "服务": "就业培训、带薪实习、青年项目",
+        "适合": "包括青年、新移民、需要本地工作经验的人"
+      },
+      {
+        "name": "Skills for Change",
+        "url": "https://www.skillsforchange.org",
+        "服务": "新移民职业训练、行业入行项目",
+        "verified": true
+      },
+      {
+        "name": "TNO Toronto (The Neighbourhood Organization)",
+        "url": "https://tno-toronto.org",
+        "服务": "免费技术培训：Coding for Future、Trades Connect、办公技能等",
+        "适合": "想转行 IT 或技工的新移民"
+      },
+      {
+        "name": "TRIEC (Toronto Region Immigrant Employment Council)",
+        "url": "https://triec.ca",
+        "服务": "行业人脉、导师匹配、雇主对接",
+        "亮点": "整个 GTA 雇主网络的中心，专门帮新移民对接本地企业"
+      }
+    ],
+
+    "BC 省": [
+      {
+        "name": "ISSofBC (Immigrant Services Society of BC)",
+        "url": "https://issbc.org",
+        "服务": "新移民全方位服务，包括就业",
+        "适合": "BC 省所有新移民"
+      },
+      {
+        "name": "MOSAIC BC",
+        "url": "https://www.mosaicbc.org",
+        "服务": "就业服务、专业人才桥梁项目"
+      },
+      {
+        "name": "S.U.C.C.E.S.S.",
+        "url": "https://successbc.ca",
+        "服务": "华人新移民服务（含中文服务）",
+        "亮点": "对华人友好，有中文工作人员"
+      }
+    ],
+
+    "阿尔伯塔省": [
+      {
+        "name": "Calgary Catholic Immigration Society (CCIS)",
+        "url": "https://www.ccisab.ca",
+        "服务": "卡尔加里地区新移民就业"
+      },
+      {
+        "name": "Edmonton Region Immigrant Employment Council (ERIEC)",
+        "url": "https://www.eriec.ca",
+        "服务": "埃德蒙顿地区雇主对接"
+      }
+    ],
+
+    "魁北克省": [
+      {
+        "name": "Services Québec",
+        "url": "https://www.quebec.ca/en/employment",
+        "服务": "魁省政府就业服务（法语为主）"
+      }
+    ],
+
+    "全国通用": [
+      {
+        "name": "Settlement.org",
+        "url": "https://settlement.org",
+        "服务": "新移民信息门户，按城市查所有可用资源",
+        "亮点": "一站式索引，找不到本地服务时先来这里"
+      }
+    ]
+  },
+
+  "学历职业认证": {
+    "_说明": "新移民来加拿大第一件事一般就是学历认证。认证报告决定你能不能做对口工作、能不能继续读书、能不能办移民。",
+
+    "学历认证(综合)": [
+      {
+        "name": "WES Canada",
+        "url": "https://www.wes.org/ca",
+        "服务": "国际学历认证，最主流，被几乎所有加拿大雇主、大学、移民局接受",
+        "费用": "$220-280 CAD（基础报告，2025 年价格仅供参考）",
+        "周期": "收到所有材料后约 7-20 个工作日",
+        "适合": "几乎所有非加拿大学历的人",
+        "verified": true,
+        "提示": "国内学历认证需要先通过中国学位与研究生教育发展中心（CDGDC）发送官方文件给 WES"
+      },
+      {
+        "name": "ICAS Canada",
+        "url": "https://www.icascanada.ca",
+        "服务": "学历认证（WES 的替代品）",
+        "适合": "WES 处理不了的特殊学历"
+      },
+      {
+        "name": "IQAS (Alberta)",
+        "url": "https://www.alberta.ca/iqas-overview.aspx",
+        "服务": "阿尔伯塔省官方学历认证",
+        "适合": "阿省的雇主或学校通常要求 IQAS"
+      }
+    ],
+
+    "技工认证-安省": [
+      {
+        "name": "Skilled Trades Ontario",
+        "url": "https://www.skilledtradesontario.ca",
+        "phone": "647-847-3000 / 1-855-299-0028",
+        "服务": "安省所有技工认证、学徒注册、Certificate of Qualification 考试",
+        "包含": "140+ 种技工，包括电工（309A/309C/442A）、水管工（306A）、HVAC（313A/313D）、汽修（310S）、焊工（456A）、木工（403A）等",
+        "verified": true,
+        "亮点": "可以查 Public Register 验证某个师傅或学徒的资质是否真实"
+      }
+    ],
+
+    "技工认证-BC": [
+      {
+        "name": "SkilledTradesBC",
+        "url": "https://skilledtradesbc.ca",
+        "服务": "BC 省所有技工认证和学徒注册"
+      }
+    ],
+
+    "技工认证-阿省": [
+      {
+        "name": "Alberta Apprenticeship and Industry Training",
+        "url": "https://tradesecrets.alberta.ca",
+        "服务": "阿省技工认证和学徒"
+      }
+    ],
+
+    "护士认证": [
+      {
+        "name": "NNAS (National Nursing Assessment Service)",
+        "url": "https://www.nnas.ca",
+        "服务": "国际护士进入加拿大的第一步认证",
+        "适合": "国内护士想在加拿大当护士的人"
+      },
+      {
+        "name": "CNO (College of Nurses of Ontario)",
+        "url": "https://www.cno.org",
+        "服务": "安省护士执照颁发机构"
+      },
+      {
+        "name": "BCCNM (BC College of Nurses & Midwives)",
+        "url": "https://www.bccnm.ca",
+        "服务": "BC 省护士执照"
+      }
+    ],
+
+    "会计认证-CPA": [
+      {
+        "name": "CPA Canada",
+        "url": "https://www.cpacanada.ca",
+        "服务": "加拿大注册会计师（CPA）认证",
+        "起点": "做 PEP（Professional Education Program）评估"
+      },
+      {
+        "name": "CPA Ontario",
+        "url": "https://www.cpaontario.ca",
+        "服务": "安省 CPA 协会"
+      }
+    ],
+
+    "工程师认证": [
+      {
+        "name": "PEO (Professional Engineers Ontario)",
+        "url": "https://www.peo.on.ca",
+        "服务": "安省 P.Eng 注册工程师认证",
+        "提示": "国内工程师转 P.Eng 周期长（5-7 年）、通过率不高，需慎重评估"
+      },
+      {
+        "name": "Engineers Canada",
+        "url": "https://engineerscanada.ca",
+        "服务": "全国工程师协会总览"
+      }
+    ],
+
+    "教师认证-安省": [
+      {
+        "name": "Ontario College of Teachers (OCT)",
+        "url": "https://www.oct.ca",
+        "服务": "安省教师执照颁发"
+      }
+    ]
+  },
+
+  "工资就业数据": {
+    "_说明": "做职业规划必看的官方数据来源",
+    "sources": [
+      {
+        "name": "Job Bank Wages",
+        "url": "https://www.jobbank.gc.ca/trend-analysis/search-wages",
+        "服务": "按 NOC 代码和地区查工资中位数、低位、高位",
+        "verified": true
+      },
+      {
+        "name": "Statistics Canada",
+        "url": "https://www.statcan.gc.ca",
+        "服务": "加拿大统计局，行业宏观数据"
+      },
+      {
+        "name": "NOC (National Occupational Classification)",
+        "url": "https://noc.esdc.gc.ca",
+        "服务": "查每个职业的 NOC 代码、定义、技能要求",
+        "verified": true,
+        "提示": "申请移民、工签、学历认证都要用到 NOC 代码"
+      }
+    ]
+  },
+
+  "求职工具": {
+    "_说明": "找工作前的准备工具",
+    "简历优化": [
+      {
+        "name": "Jobscan",
+        "url": "https://www.jobscan.co",
+        "服务": "把简历跟职位描述做匹配度评分，帮你优化简历过 ATS 系统",
+        "费用": "有免费版和付费版"
+      },
+      {
+        "name": "Resume Worded",
+        "url": "https://resumeworded.com",
+        "服务": "AI 简历评分和优化建议"
+      }
+    ],
+    "面试准备": [
+      {
+        "name": "Glassdoor 面试题库",
+        "url": "https://www.glassdoor.ca",
+        "服务": "搜公司名 + Interview，看真实面试题"
+      },
+      {
+        "name": "Pramp",
+        "url": "https://www.pramp.com",
+        "服务": "免费技术面试模拟（IT 用）"
+      }
+    ]
+  },
+
+  "政策官方网站": {
+    "_说明": "所有移民和签证信息以官方为准，不要相信中介转述",
+    "联邦": [
+      {
+        "name": "IRCC (Immigration, Refugees and Citizenship Canada)",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship.html",
+        "服务": "加拿大移民局官方，所有移民/签证信息原始来源",
+        "verified": true
+      },
+      {
+        "name": "Express Entry",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry.html",
+        "服务": "联邦 EE 通道（CEC、FSWP、FSTP）"
+      }
+    ],
+    "省提名(主要省份)": [
+      {
+        "name": "OINP (Ontario Immigrant Nominee Program)",
+        "url": "https://www.ontario.ca/page/ontario-immigrant-nominee-program-oinp"
+      },
+      {
+        "name": "BC PNP",
+        "url": "https://www.welcomebc.ca/Immigrate-to-B-C/B-C-Provincial-Nominee-Program"
+      },
+      {
+        "name": "Alberta Advantage Immigration Program",
+        "url": "https://www.alberta.ca/alberta-advantage-immigration-program.aspx"
+      },
+      {
+        "name": "Saskatchewan Immigrant Nominee Program (SINP)",
+        "url": "https://www.saskatchewan.ca/residents/moving-to-saskatchewan/immigrating-to-saskatchewan"
+      }
+    ]
+  },
+
+  "培训学校": {
+    "_说明": "⚠️ 培训学校鱼龙混杂，质量参差。我们这里只列权威/公立机构，私立机构需要单独评估后才能加入。绝不接受机构付费推荐。",
+
+    "公立学院(安省)": [
+      {
+        "name": "George Brown College",
+        "url": "https://www.georgebrown.ca",
+        "城市": "多伦多",
+        "强项": "餐饮（厨师/烘焙）、护理、商业、技工"
+      },
+      {
+        "name": "Centennial College",
+        "url": "https://www.centennialcollege.ca",
+        "城市": "多伦多",
+        "强项": "工程技术、IT、商业、酒店"
+      },
+      {
+        "name": "Seneca College",
+        "url": "https://www.senecacollege.ca",
+        "城市": "多伦多大区",
+        "强项": "IT、商业、传媒"
+      },
+      {
+        "name": "Humber College",
+        "url": "https://humber.ca",
+        "城市": "多伦多",
+        "强项": "传媒、商业、健康、技工"
+      },
+      {
+        "name": "Algonquin College",
+        "url": "https://www.algonquincollege.com",
+        "城市": "渥太华",
+        "强项": "技工、IT、健康"
+      }
+    ],
+
+    "公立学院(BC)": [
+      {
+        "name": "BCIT (British Columbia Institute of Technology)",
+        "url": "https://www.bcit.ca",
+        "城市": "温哥华",
+        "强项": "技工、工程技术、健康、商业"
+      },
+      {
+        "name": "Vancouver Community College",
+        "url": "https://www.vcc.ca",
+        "城市": "温哥华",
+        "强项": "餐饮、技工、护理"
+      }
+    ],
+
+    "私立机构": "⚠️ 待评估。任何私立培训机构进入推荐池前必须满足：1)有公立认证或政府认可 2)有真实毕业生案例可查 3)收费透明无套路 4)不付费给我们做推荐。"
+  },
+
+  "需要后续补充的模块": [
+    "各行业入门 Bridge Training Programs（针对国际专业人才）",
+    "各省 PNP 紧缺职业列表（每年更新）",
+    "Red Seal 互认技工列表",
+    "在加华人 KOL/博主白名单（提供真实信息的，非营销账号）",
+    "招聘高峰期日历（按行业）",
+    "面试常见问题中文翻译"
+  ]
+}
