@@ -102,20 +102,6 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
         ))}
       </div>
 
-      {/* Cases */}
-      {data.cases?.length > 0 && (
-        <div className="summary-block">
-          <div className="summary-block-title">📚 真实案例参考</div>
-          {data.cases.map((c, i) => (
-            <div key={i} className="case-item">
-              <div className="case-desc">{c.description}</div>
-              {c.quote && <div className="case-quote">"{c.quote}"</div>}
-              {c.lesson && <div className="case-lesson">→ {c.lesson}</div>}
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Certainty */}
       {data.certainty && (
         <div className="summary-block">
@@ -129,30 +115,6 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
           {data.certainty.professional?.map((s, i) => (
             <div key={i} className="certainty-item">❓ {s}</div>
           ))}
-        </div>
-      )}
-
-      {/* Next steps */}
-      {data.nextSteps?.length > 0 && (
-        <div className="summary-block">
-          <div className="summary-block-title">🎯 明天能做的事</div>
-          {data.nextSteps.map((s, i) => (
-            <div key={i} className="nextstep-item"><span className="nextstep-num">{i + 1}</span>{s}</div>
-          ))}
-        </div>
-      )}
-
-      {/* Resources */}
-      {data.resources?.length > 0 && (
-        <div className="summary-block">
-          <div className="summary-block-title">🔗 相关资源</div>
-          <div className="resources-list">
-            {data.resources.map((r, i) => (
-              <a key={i} href={r.url} target="_blank" rel="noopener" className="resource-link">
-                {r.name}
-              </a>
-            ))}
-          </div>
         </div>
       )}
 
@@ -273,6 +235,7 @@ export default function ChatPage() {
   const [summaryData, setSummaryData] = useState(null)
   const [quickRepliesDone, setQuickRepliesDone] = useState(false)
   const [isSummaryDone, setIsSummaryDone] = useState(false)
+  const [isComposing, setIsComposing] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -406,7 +369,7 @@ export default function ChatPage() {
   }
 
   function handleKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) { e.preventDefault(); sendMessage() }
   }
 
   if (step === 'onboarding') return <OnboardingForm onSubmit={handleOnboardingSubmit} />
@@ -490,6 +453,8 @@ export default function ChatPage() {
               className="chat-textarea"
               value={input}
               onChange={e => { setInput(e.target.value); setQuickRepliesDone(true); autoResize() }}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
               placeholder="输入你的回答，按 Enter 发送..."
