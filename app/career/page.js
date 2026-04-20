@@ -107,13 +107,13 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
         <div className="summary-block">
           <div className="summary-block-title">确定性分级</div>
           {data.certainty.sure?.map((s, i) => (
-            <div key={i} className="certainty-item">✅ {s}</div>
+            <div key={i} className="certainty-item">{s}</div>
           ))}
           {data.certainty.unsure?.map((s, i) => (
-            <div key={i} className="certainty-item">⚠️ {s}</div>
+            <div key={i} className="certainty-item">{s}</div>
           ))}
           {data.certainty.professional?.map((s, i) => (
-            <div key={i} className="certainty-item">❓ {s}</div>
+            <div key={i} className="certainty-item">{s}</div>
           ))}
         </div>
       )}
