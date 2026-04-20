@@ -1359,6 +1359,18 @@ footer {
 .chat-send-btn-disabled { background: #E5E7EB !important; cursor: not-allowed; color: #9CA3AF; }
 .chat-input-hint { font-size: 11px; color: #9CA3AF; text-align: center; margin-top: 5px; }
 
+.quick-replies {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 0 8px 36px; max-width: 400px;
+}
+.quick-reply-btn {
+  background: #F3F0FF; border: 1px solid #DDD6FE; border-radius: 20px;
+  padding: 8px 16px; font-size: 14px; color: #5B21B6; font-weight: 500;
+  cursor: pointer; text-align: left; transition: background 0.15s;
+  font-family: inherit;
+}
+.quick-reply-btn:hover { background: #EDE9FE; border-color: #7C3AED; }
+
 /* ── Onboarding Form ── */
 .onboard-root {
   background: #F8F9FA;
@@ -1502,6 +1514,10 @@ footer {
 .lead-wechat-block { background: #F3F0FF; border-radius: 8px; padding: 12px 14px; }
 .lead-wechat-label { font-size: 12px; color: #6B7280; margin-bottom: 3px; }
 .lead-wechat-id { font-size: 16px; font-weight: 800; color: #7c3aed; }
+.lead-wechat-cta { background: #1a1a2e; border-radius: 10px; padding: 16px 18px; text-align: center; }
+.lead-wechat-line1 { font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 4px; }
+.lead-wechat-line2 { font-size: 18px; font-weight: 800; color: #60a5fa; margin-bottom: 6px; }
+.lead-wechat-line3 { font-size: 12px; color: #a78bfa; line-height: 1.5; }
 .lead-wechat-form { display: flex; flex-direction: column; gap: 8px; }
 .lead-error { font-size: 12px; color: #EF4444; }
 

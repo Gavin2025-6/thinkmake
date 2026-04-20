@@ -166,25 +166,13 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
         {leadDone ? (
           <>
             <div className="lead-done-text">
-            {leadFallback || `✅ 完整报告已发送至 ${userEmail}`}
-          </div>
-            <div className="lead-wechat-block">
-              <div className="lead-wechat-label">想要一对一深度指导？</div>
-              <div className="lead-wechat-id">微信：{process.env.NEXT_PUBLIC_WECHAT_CONTACT || 'thinkmake_ca'}</div>
+              {leadFallback || `✅ 完整报告已发送至 ${userEmail}`}
             </div>
-            <form onSubmit={handleWechatSubmit} className="lead-wechat-form">
-              <input
-                className="onboard-input"
-                type="text"
-                placeholder="留下你的微信号，我们主动联系你"
-                value={leadWechat}
-                onChange={e => setLeadWechat(e.target.value)}
-              />
-              {leadError && <div className="lead-error">{leadError}</div>}
-              <button type="submit" className="onboard-btn" disabled={leadSubmitting || !leadWechat}>
-                {leadSubmitting ? '提交中...' : '提交微信号'}
-              </button>
-            </form>
+            <div className="lead-wechat-cta">
+              <div className="lead-wechat-line1">想要一对一深度指导？</div>
+              <div className="lead-wechat-line2">微信：{process.env.NEXT_PUBLIC_WECHAT_CONTACT || 'thinkmake_ca'}</div>
+              <div className="lead-wechat-line3">注册后可开启进度跟踪，系统陪你一步步走完这条路</div>
+            </div>
           </>
         ) : (
           <div className="lead-done-text">⏳ 发送报告中...</div>
@@ -283,6 +271,7 @@ export default function ChatPage() {
   const [summaryGenerating, setSummaryGenerating] = useState(false)
   const [sessionId] = useState(() => `s_${Date.now()}_${Math.random().toString(36).slice(2)}`)
   const [summaryData, setSummaryData] = useState(null)
+  const [quickRepliesDone, setQuickRepliesDone] = useState(false)
   const [isSummaryDone, setIsSummaryDone] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
@@ -311,11 +300,47 @@ export default function ChatPage() {
     }, 300)
   }
 
+  // Auto-resize textarea (max 6 lines)
+  function autoResize() {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
+    ta.style.overflowY = ta.scrollHeight > 120 ? 'auto' : 'hidden'
+  }
+
   function handleOnboardingSubmit(info) {
     setUserInfo(info)
-    const greeting = `你好 ${info.name}！我是 ThinkMake 职业规划助手 👋\n\n我专门帮助加拿大华人新移民找到适合自己的职业方向。我手上有数十个真实华人新移民的案例、经过验证的求职策略，和 100+ 个加拿大权威资源。\n\n咱们聊几分钟，我帮你梳理一下方向。先告诉我：**你之前在国内做什么工作？做了多久？**`
+    const greeting = `你好 ${info.name}！我是 ThinkMake 职业规划助手 👋\n\n我专门帮助加拿大华人找到适合自己的职业方向。手上有真实案例、经过验证的求职策略，和 100+ 个权威资源。\n\n你现在的情况是哪种？（点选或直接输入都可以）`
     setMessages([{ role: 'assistant', content: greeting }])
     setStep('chat')
+  }
+
+  async function sendQuickReply(text) {
+    setQuickRepliesDone(true)
+    setInput('')
+    const userMsg = { role: 'user', content: text }
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
+    setLoading(true)
+    setActive(true)
+    try {
+      const apiMessages = newMessages.slice(1).map(m => ({ role: m.role, content: m.content }))
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: apiMessages, sessionId, userName: userInfo?.name, userGender: userInfo?.gender }),
+      })
+      const data = await res.json()
+      if (data.message) setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      if (data.isSummaryComplete) {
+        setIsSummaryDone(true)
+        if (data.summaryData) setSummaryData(data.summaryData)
+      }
+    } catch { /* ignore */ } finally {
+      setLoading(false)
+      setActive(false)
+    }
   }
 
   async function sendMessage() {
@@ -413,6 +438,21 @@ export default function ChatPage() {
           </div>
         ))}
 
+        {/* Quick reply buttons — shown after first AI message only */}
+        {messages.length === 1 && !quickRepliesDone && !loading && (
+          <div className="quick-replies">
+            {[
+              { emoji: '🎓', label: '我是留学生/本地成长' },
+              { emoji: '🌏', label: '我是新移民（从国内来）' },
+              { emoji: '🔍', label: '我想了解某个行业' },
+            ].map(({ emoji, label }) => (
+              <button key={label} className="quick-reply-btn" onClick={() => sendQuickReply(`${emoji} ${label}`)}>
+                {emoji} {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && (
           <div className="chat-msg-wrap chat-msg-wrap-ai">
             <div className="chat-avatar">🤖</div>
@@ -449,11 +489,12 @@ export default function ChatPage() {
               ref={textareaRef}
               className="chat-textarea"
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={e => { setInput(e.target.value); setQuickRepliesDone(true); autoResize() }}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
               placeholder="输入你的回答，按 Enter 发送..."
               rows={1}
+              style={{ overflowY: 'hidden' }}
               disabled={loading}
             />
             <button
