@@ -334,23 +334,51 @@ export default function ChatPage() {
         }),
       })
       const data = await res.json()
-      console.log('[Chat] response:', { isSummaryComplete: data.isSummaryComplete, hasSummaryData: !!data.summaryData, message: data.message?.slice(0, 80) })
+      console.log('[Chat] AI response received, length:', data.message?.length || 0)
+      console.log('[Chat] Has SUMMARY_DATA_START:', !!(data.message?.includes('SUMMARY_DATA_START')))
+      console.log('[Chat] isSummaryComplete:', data.isSummaryComplete, '| hasSummaryData:', !!data.summaryData)
 
       if (!res.ok || data.error) {
         setMessages(prev => [...prev, { role: 'assistant', content: `抱歉，出错了：${data.error || '请稍后重试'}` }])
         return
       }
 
-      if (data.message) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
+      // ── Client-side fallback: parse SUMMARY_DATA if backend missed it ──
+      let resolvedSummary = data.summaryData
+      let displayMessage = data.message || ''
+
+      if (!resolvedSummary && displayMessage.includes('SUMMARY_DATA_START')) {
+        const startIdx = displayMessage.indexOf('SUMMARY_DATA_START')
+        const endIdx = displayMessage.indexOf('SUMMARY_DATA_END')
+        if (startIdx !== -1 && endIdx !== -1) {
+          const jsonStr = displayMessage
+            .substring(startIdx + 'SUMMARY_DATA_START'.length, endIdx)
+            .trim()
+          try {
+            resolvedSummary = JSON.parse(jsonStr)
+            console.log('[Chat] Client-side parse succeeded')
+          } catch (e) {
+            console.error('[Chat] Client-side parse failed:', e.message)
+            console.error('[Chat] Failed JSON (first 300):', jsonStr.slice(0, 300))
+          }
+        }
+        // Always strip raw block from displayed text — never show JSON to user
+        displayMessage = displayMessage
+          .replace(/SUMMARY_DATA_START[\s\S]*?SUMMARY_DATA_END/, '')
+          .replace(/SUMMARY_COMPLETE:\{[^}]*\}/, '')
+          .trim()
       }
 
-      if (data.isSummaryComplete) {
+      if (displayMessage) {
+        setMessages(prev => [...prev, { role: 'assistant', content: displayMessage }])
+      }
+
+      const isSummaryDoneNow = data.isSummaryComplete || !!resolvedSummary
+      if (isSummaryDoneNow) {
         setIsSummaryDone(true)
-        if (data.summaryData) {
-          setSummaryData(data.summaryData)
+        if (resolvedSummary) {
+          setSummaryData(resolvedSummary)
         } else {
-          // JSON parse failed on backend — show fallback message so user isn't left with blank
           console.warn('[Chat] summaryData missing despite isSummaryComplete')
           setMessages(prev => [...prev, {
             role: 'assistant',

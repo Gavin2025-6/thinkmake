@@ -59,6 +59,7 @@ export async function POST(request) {
         ? `你好 ${userName}，你的加拿大职业规划报告来了 🍁`
         : '你的加拿大职业规划报告来了 🍁'
 
+      console.log('[Lead] Sending email to:', normalizedEmail, '| userName:', userName, '| hasPortrait:', !!summaryData?.portrait)
       const result = await resend.emails.send({
         from: 'ThinkMake CareerPath <onboarding@resend.dev>',
         to: normalizedEmail,
@@ -69,7 +70,10 @@ export async function POST(request) {
         console.error('[Lead] Email error:', result.error)
       } else {
         emailSent = true
+        console.log('[Lead] Email sent OK, id:', result.data?.id)
       }
+    } else {
+      console.log('[Lead] Email skipped — RESEND_API_KEY present:', !!process.env.RESEND_API_KEY, '| summaryText length:', summaryText?.length || 0)
     }
 
     const wechatContact = process.env.WECHAT_CONTACT || 'thinkmake_ca'
