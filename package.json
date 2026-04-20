@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate --schema=prisma/schema.prisma && next build",
-    "start": "prisma migrate deploy --schema=prisma/schema.prisma && ./node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"
+    "start": "prisma migrate deploy --schema=prisma/schema.prisma && next start -H 0.0.0.0 -p ${PORT:-3000}"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
