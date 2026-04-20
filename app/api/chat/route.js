@@ -87,10 +87,18 @@ SUMMARY_COMPLETE:{"summary":true}
 对话最多进行 12 轮。到第 10 轮时，不管 7 个维度是否收集完整，必须在下一轮给出总结。宁可信息不全给出总结，也不能无限继续提问。
 
 ## 禁止重复提问
-每次提问前，先检查对话历史，确认该维度是否已有答案。7 个维度中已收集到答案的，绝对不再重复询问。
+每次提问前，先在脑子里过一遍对话历史，7个维度中哪些已经有答案了。已有答案的维度绝对不再提及，直接转向下一个还没收集到的维度。用户说了某件事（比如"开始就知道机会少"）→ 标注一下、接着往前走，不要顺着这个话题追问。
+
+## 禁止追问动机
+绝对禁止问以下类型的问题：
+- "你当时为什么选这个？"
+- "你是怎么想的？"
+- "你是从什么时候意识到的？"
+- "你对这件事有什么感受？"
+这些是心理分析问题，对职业建议没有帮助。只问能直接影响职业建议的具体信息（城市、身份、技能、家庭压力、英语、目标）。
 
 ## 禁止
-"你应该考虑..."/"很多人都..."/ 两个问题叠在一起 / 给5年规划 / 假装确定 / "这是个好问题" / "我理解你的感受" / 一次超过3个建议方向 / 案例编号（案例001、T001等）/ 问薪资期待 / 鸡汤（"加油"、"你可以的"）/ 推荐美国机构 / 重复已经问过的问题。
+"你应该考虑..."/"很多人都..."/ 两个问题叠在一起 / 给5年规划 / 假装确定 / "这是个好问题" / "我理解你的感受" / 一次超过3个建议方向 / 案例编号（案例001、T001等）/ 问薪资期待 / 鸡汤（"加油"、"你可以的"）/ 推荐美国机构 / 重复已经问过的问题 / 追问用户的动机或感受。
 
 你的工作不是给答案，是帮对方找到他自己的答案。`
 
@@ -180,9 +188,9 @@ export async function POST(request) {
       return NextResponse.json({ error: '今日对话次数已达上限（20次），请明天再试' }, { status: 429 })
     }
 
-    // ── LAYER 2: Model routing ────────────────────────────────
-    const isSummaryTurn = messages.length >= 8
-    const forceSummary = messages.length >= 24   // 12 rounds × 2 messages
+    // ── LAYER 2: Model routing + turn counting ────────────────
+    const userTurns = messages.filter(m => m.role === 'user').length
+    const isSummaryTurn = userTurns >= 8
     const model = 'claude-sonnet-4-6'
     const maxTokens = isSummaryTurn ? 4000 : 1200
 
@@ -209,7 +217,11 @@ export async function POST(request) {
       historySummary ? `\n前期对话摘要：${historySummary}` : '',
       industryBlocks ? `\n${industryBlocks}` : '',
       dataContext,
-      forceSummary ? '\n⚠️ 系统强制指令：对话已达12轮上限，必须立即触发总结，不管信息是否完整，现在输出完整的 SUMMARY_DATA_START...SUMMARY_DATA_END 块。' : '',
+      userTurns >= 12
+        ? '\n\n【最终强制指令】对话已达12轮上限。立即停止提问，必须现在输出完整的 SUMMARY_DATA_START...SUMMARY_DATA_END 总结块，这是最后一轮。'
+        : userTurns >= 10
+          ? '\n\n【强制指令】你已经问了超过10轮问题。不能再问任何新问题，必须立即输出 SUMMARY_DATA_START 格式的总结，信息不全也要输出。'
+          : '',
     ].filter(Boolean).join('\n')
 
     // ── LAYER 1: Prompt caching ───────────────────────────────
@@ -228,7 +240,7 @@ export async function POST(request) {
     })
 
     const assistantText = response.content[0]?.text || ''
-    console.log(`[Chat] model=${model} turns=${messages.length} industries=[${[...detectedIndustries].join(',')}] compressed=${historySummary != null}`)
+    console.log(`[Chat] model=${model} msgs=${messages.length} userTurns=${userTurns} industries=[${[...detectedIndustries].join(',')}] compressed=${historySummary != null}`)
     console.log('[Chat] SUMMARY_START found:', assistantText.includes('SUMMARY_DATA_START'))
     if (assistantText.includes('SUMMARY_DATA_START')) {
       console.log('[Chat] AI raw summary block:', assistantText.slice(0, 500))
