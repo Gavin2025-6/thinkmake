@@ -240,7 +240,9 @@ export async function POST(request) {
     })
 
     const assistantText = response.content[0]?.text || ''
+    const u = response.usage
     console.log(`[Chat] model=${model} msgs=${messages.length} userTurns=${userTurns} industries=[${[...detectedIndustries].join(',')}] compressed=${historySummary != null}`)
+    console.log(`[Chat] Cache usage: ${u.cache_read_input_tokens ?? 0} cached, ${u.cache_creation_input_tokens ?? 0} created, ${u.input_tokens} input, ${u.output_tokens} output`)
     console.log('[Chat] SUMMARY_START found:', assistantText.includes('SUMMARY_DATA_START'))
     if (assistantText.includes('SUMMARY_DATA_START')) {
       console.log('[Chat] AI raw summary block:', assistantText.slice(0, 500))
