@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate --schema=prisma/schema.prisma && next build",
+    "build": "prisma generate --schema=prisma/schema.prisma && prisma migrate deploy --schema=prisma/schema.prisma && next build",
     "start": "./node_modules/.bin/next start -H 0.0.0.0 -p ${PORT:-3000}"
   },
   "dependencies": {
