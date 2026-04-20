@@ -5,6 +5,16 @@ import { prisma } from '../../lib/prisma'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── Ensure new columns exist (runs once on module load, idempotent) ──
+if (process.env.DATABASE_URL) {
+  Promise.all([
+    prisma.$executeRaw`ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "userProfile" JSONB`,
+    prisma.$executeRaw`ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "recentTurns" JSONB`,
+  ])
+    .then(() => console.log('[DB] Schema columns verified'))
+    .catch(e => console.log('[DB] Schema check skipped:', e.message))
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // LAYER 1: Conversation prompt — ~500 tokens, module-level const
 // Cached with extended-TTL; never changes between requests
