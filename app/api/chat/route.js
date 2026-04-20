@@ -83,6 +83,12 @@ SUMMARY_DATA_START
 SUMMARY_DATA_END
 SUMMARY_COMPLETE:{"summary":true}
 
+## 轮数限制
+对话最多进行 12 轮。到第 10 轮时，不管 7 个维度是否收集完整，必须在下一轮给出总结。宁可信息不全给出总结，也不能无限继续提问。
+
+## 禁止重复提问
+每次提问前，先检查对话历史，确认该维度是否已有答案。7 个维度中已收集到答案的，绝对不再重复询问。
+
 ## 禁止
 "你应该考虑..."/"很多人都..."/ 两个问题叠在一起 / 给5年规划 / 假装确定 / "这是个好问题" / "我理解你的感受" / 一次超过3个建议方向 / 案例编号（案例001、T001等）/ 问薪资期待 / 鸡汤（"加油"、"你可以的"）/ 推荐美国机构 / 重复已经问过的问题。
 
@@ -175,9 +181,9 @@ export async function POST(request) {
     }
 
     // ── LAYER 2: Model routing ────────────────────────────────
-    // Haiku for early turns (cheap), Sonnet at turn 8+ (quality for summary)
     const isSummaryTurn = messages.length >= 8
-    const model = isSummaryTurn ? 'claude-sonnet-4-6' : 'claude-sonnet-4-6'
+    const forceSummary = messages.length >= 24   // 12 rounds × 2 messages
+    const model = 'claude-sonnet-4-6'
     const maxTokens = isSummaryTurn ? 4000 : 1200
 
     // ── LAYER 4: History compression ─────────────────────────
@@ -203,6 +209,7 @@ export async function POST(request) {
       historySummary ? `\n前期对话摘要：${historySummary}` : '',
       industryBlocks ? `\n${industryBlocks}` : '',
       dataContext,
+      forceSummary ? '\n⚠️ 系统强制指令：对话已达12轮上限，必须立即触发总结，不管信息是否完整，现在输出完整的 SUMMARY_DATA_START...SUMMARY_DATA_END 块。' : '',
     ].filter(Boolean).join('\n')
 
     // ── LAYER 1: Prompt caching ───────────────────────────────
@@ -212,15 +219,13 @@ export async function POST(request) {
       ...(dynamicParts ? [{ type: 'text', text: dynamicParts }] : []),
     ]
 
-    const response = await anthropic.messages.create(
-      {
-        model,
-        max_tokens: maxTokens,
-        system: systemBlocks,
-        messages: workingMessages,
-      },
-      { headers: { 'anthropic-beta': 'extended-cache-ttl-2025-04-11' } }
-    )
+    const response = await anthropic.beta.messages.create({
+      model,
+      max_tokens: maxTokens,
+      system: systemBlocks,
+      messages: workingMessages,
+      betas: ['extended-cache-ttl-2025-04-11'],
+    })
 
     const assistantText = response.content[0]?.text || ''
     console.log(`[Chat] model=${model} turns=${messages.length} industries=[${[...detectedIndustries].join(',')}] compressed=${historySummary != null}`)
