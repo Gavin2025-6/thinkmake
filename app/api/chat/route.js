@@ -41,28 +41,6 @@ SUMMARY_COMPLETE:{"summary":true}
 - 禁止在对话阶段给具体数字`
 
 // ─────────────────────────────────────────────────────────────
-// LAYER 4: History compression (Haiku, ~150-token output)
-// Fires when messages.length > 6; compresses oldest turns
-// ─────────────────────────────────────────────────────────────
-async function compressHistory(messages) {
-  const toCompress = messages.slice(0, messages.length - 3)
-  const recent = messages.slice(messages.length - 3)
-  const dialogue = toCompress.map(m => `${m.role === 'user' ? 'U' : 'A'}: ${String(m.content).slice(0, 300)}`).join('\n')
-
-  try {
-    const res = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 250,
-      system: '从对话提炼用户信息，只输出紧凑JSON，字段：姓名、城市、身份、职业背景、家庭、英语、当前状态、目标。',
-      messages: [{ role: 'user', content: dialogue }],
-    })
-    return { summary: res.content[0]?.text || '', trimmed: recent }
-  } catch {
-    return { summary: null, trimmed: recent }
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // Rate limiting
 // ─────────────────────────────────────────────────────────────
 const ipMap = new Map()
@@ -102,16 +80,7 @@ export async function POST(request) {
     const model = 'claude-sonnet-4-6'
     const maxTokens = isSummaryTurn ? 4000 : 1200
 
-    // ── LAYER 4: History compression ─────────────────────────
-    let workingMessages = messages
-    let historySummary = null
-    if (messages.length > 6) {
-      const { summary, trimmed } = await compressHistory(messages)
-      workingMessages = trimmed
-      historySummary = summary
-    }
-
-    // ── LAYER 3: Build dynamic context ───────────────────────
+    // ── Build dynamic context ─────────────────────────────────
     const detectedIndustries = detectIndustries(messages)
     const industryBlocks = [...detectedIndustries].map(k => INDUSTRY_DATA[k]).join('\n\n')
 
@@ -122,7 +91,6 @@ export async function POST(request) {
 
     const dynamicParts = [
       `用户：${userName || '用户'} | 性别：${userGender || '未透露'}`,
-      historySummary ? `\n前期对话摘要：${historySummary}` : '',
       industryBlocks ? `\n${industryBlocks}` : '',
       dataContext,
       userTurns >= 12
@@ -148,7 +116,7 @@ export async function POST(request) {
     })
 
     const assistantText = response.content[0]?.text || ''
-    console.log(`[Chat] model=${model} turns=${userTurns} industries=[${[...detectedIndustries].join(',')}] compressed=${historySummary != null}`)
+    console.log(`[Chat] model=${model} turns=${userTurns} industries=[${[...detectedIndustries].join(',')}]`)
     console.log('Cache read:', response.usage?.cache_read_input_tokens || 0)
     console.log('Cache write:', response.usage?.cache_creation_input_tokens || 0)
     console.log('Total input:', response.usage?.input_tokens || 0)
