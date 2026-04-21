@@ -288,10 +288,11 @@ export default function ChatPage() {
     setLoading(true)
     setActive(true)
     try {
+      const apiMessages = newMessages.slice(1).map(m => ({ role: m.role, content: m.content }))
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, sessionId, userName: userInfo?.name, userGender: userInfo?.gender }),
+        body: JSON.stringify({ messages: apiMessages, sessionId, userName: userInfo?.name, userGender: userInfo?.gender }),
       })
       const data = await res.json()
       if (data.message) setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
@@ -317,11 +318,16 @@ export default function ChatPage() {
     setActive(true)
 
     try {
+      // Filter out the initial greeting (it's static, not from Claude)
+      const apiMessages = newMessages
+        .slice(1) // skip initial assistant greeting
+        .map(m => ({ role: m.role, content: m.content }))
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          messages: apiMessages,
           sessionId,
           userName: userInfo?.name,
           userGender: userInfo?.gender,

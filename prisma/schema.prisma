@@ -18,9 +18,6 @@ model Conversation {
   matchedTactics       Json?
   finalRecommendations Json?
 
-  userProfile  Json?   // running 7-field profile updated each turn
-  recentTurns  Json?   // last 4 messages (2 turns) for context window
-
   pdfDownloadedAt DateTime?
   ipAddress       String?
   userAgent       String?
