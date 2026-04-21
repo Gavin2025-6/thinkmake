@@ -111,7 +111,7 @@ export async function POST(request) {
       model,
       max_tokens: maxTokens,
       system: systemBlocks,
-      messages: workingMessages,
+      messages,
       betas: ['extended-cache-ttl-2025-04-11'],
     })
 
