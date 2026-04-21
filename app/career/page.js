@@ -44,7 +44,7 @@ function RecCard({ rec }) {
 }
 
 // ── Summary View ──────────────────────────────────────────────
-function SummaryView({ data, userName, userEmail, sessionId }) {
+function SummaryView({ data, userName, userEmail, userPhone, sessionId }) {
   const [leadDone, setLeadDone] = useState(false)
   const [leadWechat, setLeadWechat] = useState('')
   const [leadSubmitting, setLeadSubmitting] = useState(false)
@@ -66,7 +66,7 @@ function SummaryView({ data, userName, userEmail, sessionId }) {
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true, userName: userName }),
+        body: JSON.stringify({ email, wechat, sessionId, summaryText, consent: true, userName, phone: userPhone }),
       })
       const json = await res.json()
       if (res.ok) {
@@ -465,6 +465,7 @@ export default function ChatPage() {
             data={summaryData}
             userName={userInfo?.name}
             userEmail={userInfo?.email}
+            userPhone={userInfo?.phone}
             sessionId={sessionId}
           />
         )}

@@ -29,6 +29,8 @@ model Conversation {
 model Lead {
   id     String  @id @default(cuid())
   email  String  @unique
+  name   String?
+  phone  String?
   wechat String?
 
   conversationId String

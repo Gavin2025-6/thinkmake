@@ -2,11 +2,20 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { prisma } from '../../lib/prisma'
 
+// Ensure name/phone columns exist (idempotent, safe to run every cold start)
+async function ensureLeadColumns() {
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "name" TEXT`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Lead" ADD COLUMN IF NOT EXISTS "phone" TEXT`)
+  } catch {}
+}
+
 export async function POST(request) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   try {
+    if (process.env.DATABASE_URL) await ensureLeadColumns()
     const body = await request.json()
-    const { email, wechat, sessionId, summaryText, consent } = body
+    const { email, wechat, sessionId, summaryText, consent, userName, phone } = body
 
     if (!email || !email.includes('@')) {
       return NextResponse.json({ error: '请输入有效的邮箱地址' }, { status: 400 })
@@ -20,16 +29,25 @@ export async function POST(request) {
     // Save lead to DB if available
     if (process.env.DATABASE_URL) {
       try {
+        let summaryJson = null
+        try { summaryJson = summaryText ? JSON.parse(summaryText) : null } catch {}
+
         await prisma.lead.upsert({
           where: { email: normalizedEmail },
           update: {
+            name: userName || undefined,
+            phone: phone || undefined,
             wechat: wechat || undefined,
             conversationId: sessionId || 'direct',
+            recommendedCareers: summaryJson || undefined,
           },
           create: {
             email: normalizedEmail,
+            name: userName || null,
+            phone: phone || null,
             wechat: wechat || null,
             conversationId: sessionId || 'direct',
+            recommendedCareers: summaryJson || null,
             source: 'v2_chat',
           },
         })
@@ -53,8 +71,7 @@ export async function POST(request) {
       let summaryData = null
       try { summaryData = JSON.parse(summaryText) } catch {}
 
-      const userName = body.userName || ''
-      const html = buildSummaryEmail(userName, summaryData)
+      const html = buildSummaryEmail(userName || '', summaryData)
       const subject = userName
         ? `你好 ${userName}，你的加拿大职业规划报告来了 🍁`
         : '你的加拿大职业规划报告来了 🍁'
