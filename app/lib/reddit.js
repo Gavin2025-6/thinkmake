@@ -50,6 +50,7 @@ export async function scrapeReddit() {
           if (ageDays > 2) continue
 
           results.push({
+            postId: `reddit_${post.id}`,
             source: 'reddit',
             subreddit,
             title: post.title || '',

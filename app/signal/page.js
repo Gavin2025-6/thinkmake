@@ -3,13 +3,28 @@ import { useState, useEffect } from 'react'
 
 const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📱 生活类', '🔧 其他']
 
+const TYPE_META = {
+  new:        { label: '🆕 新信号',   bg: '#eff6ff', color: '#1d4ed8' },
+  rising:     { label: '🔥 上升中',   bg: '#fff7ed', color: '#c2410c' },
+  persistent: { label: '📊 持续热门', bg: '#f0fdf4', color: '#15803d' },
+}
+
 function ScoreBadge({ score }) {
   if (!score) return null
   const color = score >= 8 ? '#065f46' : score >= 6 ? '#92400e' : '#6b7280'
-  const bg = score >= 8 ? '#d1fae5' : score >= 6 ? '#fef3c7' : '#f3f4f6'
+  const bg    = score >= 8 ? '#d1fae5' : score >= 6 ? '#fef3c7' : '#f3f4f6'
   return (
     <span style={{ background: bg, color, borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>
       {score.toFixed(1)} / 10
+    </span>
+  )
+}
+
+function TypeBadge({ type }) {
+  const m = TYPE_META[type] || TYPE_META.new
+  return (
+    <span style={{ background: m.bg, color: m.color, borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>
+      {m.label}
     </span>
   )
 }
@@ -25,14 +40,21 @@ function CatBadge({ category }) {
 
 function SignalCard({ signal }) {
   const [expanded, setExpanded] = useState(false)
-  const a = signal.aiAnalysis || {}
-  const date = signal.date ? new Date(signal.date).toLocaleDateString('zh-CN') : ''
+  const a   = signal.aiAnalysis || {}
+  const date = signal.firstSeen ? new Date(signal.firstSeen).toLocaleDateString('zh-CN') : ''
+  const vel  = signal.upvoteVelocity ? `↑${Math.round(signal.upvoteVelocity)}/天` : null
 
   return (
     <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, background: '#fff' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+        <TypeBadge type={signal.signalType} />
         <CatBadge category={signal.category} />
         <ScoreBadge score={signal.aiScore} />
+        {vel && (
+          <span style={{ background: '#fff7ed', color: '#c2410c', borderRadius: 12, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>
+            {vel}
+          </span>
+        )}
         <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 'auto' }}>
           r/{signal.subreddit || signal.source} · 👍{signal.upvotes} · {date}
         </span>
@@ -54,7 +76,7 @@ function SignalCard({ signal }) {
         {a.total && (
           <button onClick={() => setExpanded(e => !e)}
             style={{ fontSize: 12, color: '#7c3aed', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            {expanded ? '收起' : '查看评分详情'}
+            {expanded ? '收起' : '查看评分'}
           </button>
         )}
       </div>
@@ -77,31 +99,44 @@ function SignalCard({ signal }) {
 }
 
 export default function SignalPage() {
-  const [signals, setSignals] = useState([])
-  const [reports, setReports] = useState([])
-  const [stats, setStats] = useState({ total: 0, today: 0 })
-  const [category, setCategory] = useState('')
-  const [sort, setSort] = useState('score')
-  const [loading, setLoading] = useState(true)
+  const [signals, setSignals]     = useState([])
+  const [reports, setReports]     = useState([])
+  const [stats, setStats]         = useState({ total: 0, today: 0, countNew: 0, countRising: 0, countPersistent: 0 })
+  const [category, setCategory]   = useState('')
+  const [signalType, setSignalType] = useState('')
+  const [sort, setSort]           = useState('score')
+  const [loading, setLoading]     = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
 
   async function load() {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ sort, ...(category ? { category } : {}) })
-      const res = await fetch(`/api/signal/list?${params}`)
+      const params = new URLSearchParams({ sort, ...(category ? { category } : {}), ...(signalType ? { type: signalType } : {}) })
+      const res  = await fetch(`/api/signal/list?${params}`)
       const data = await res.json()
       setSignals(data.signals || [])
       setReports(data.reports || [])
-      setStats(data.stats || { total: 0, today: 0 })
+      setStats(data.stats || { total: 0, today: 0, countNew: 0, countRising: 0, countPersistent: 0 })
       setLastUpdated(new Date())
     } catch {}
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [category, sort]) // eslint-disable-line
+  useEffect(() => { load() }, [category, signalType, sort]) // eslint-disable-line
 
-  const lowCompHigh = signals.filter(s => s.aiAnalysis?.competition < 4 && s.aiScore > 7)
+  const verified = signals.filter(s => s.aiAnalysis?.competition < 4 && s.aiScore > 7)
+
+  const pill = (label, active, onClick) => (
+    <button onClick={onClick} style={{
+      padding: '5px 12px', borderRadius: 20,
+      border: '1px solid #e5e7eb',
+      background: active ? '#7c3aed' : '#fff',
+      color: active ? '#fff' : '#374151',
+      fontSize: 13, cursor: 'pointer',
+    }}>
+      {label}
+    </button>
+  )
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '20px 16px', fontFamily: '-apple-system, sans-serif' }}>
@@ -117,38 +152,42 @@ export default function SignalPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
         {[
-          { label: '历史信号', value: stats.total },
+          { label: '历史总量', value: stats.total },
           { label: '今日新增', value: stats.today },
-          { label: '⚡ 低竞争高潜力', value: lowCompHigh.length },
-        ].map(({ label, value }) => (
-          <div key={label} style={{ flex: 1, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#7c3aed' }}>{value}</div>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>{label}</div>
+          { label: '🆕 新信号', value: stats.countNew, type: 'new' },
+          { label: '🔥 上升中', value: stats.countRising, type: 'rising' },
+          { label: '📊 持续热门', value: stats.countPersistent, type: 'persistent' },
+        ].map(({ label, value, type }) => (
+          <div key={label}
+            onClick={() => type && setSignalType(signalType === type ? '' : type)}
+            style={{ background: signalType === type ? '#f3f0ff' : '#f9fafb', border: `1px solid ${signalType === type ? '#7c3aed' : '#e5e7eb'}`, borderRadius: 10, padding: '10px 12px', cursor: type ? 'pointer' : 'default' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#7c3aed' }}>{value ?? 0}</div>
+            <div style={{ fontSize: 11, color: '#6b7280' }}>{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-        <button onClick={() => setCategory('')}
-          style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid #e5e7eb', background: !category ? '#7c3aed' : '#fff', color: !category ? '#fff' : '#374151', fontSize: 13, cursor: 'pointer' }}>
-          全部
-        </button>
-        {CATEGORIES.map(cat => (
-          <button key={cat} onClick={() => setCategory(cat === category ? '' : cat)}
-            style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid #e5e7eb', background: category === cat ? '#7c3aed' : '#fff', color: category === cat ? '#fff' : '#374151', fontSize: 13, cursor: 'pointer' }}>
-            {cat}
-          </button>
-        ))}
+      {/* Verified gap highlight */}
+      {verified.length > 0 && !category && !signalType && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>✅ 已验证空白（竞争&lt;4，综合&gt;7）— {verified.length} 条</div>
+          {verified.slice(0, 3).map(s => <SignalCard key={s.id} signal={s} />)}
+        </div>
+      )}
+
+      {/* Category filter */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        {pill('全部分类', !category, () => setCategory(''))}
+        {CATEGORIES.map(cat => pill(cat, category === cat, () => setCategory(cat === category ? '' : cat)))}
       </div>
 
       {/* Sort */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
         <span style={{ fontSize: 13, color: '#6b7280' }}>排序：</span>
-        {[['score', 'AI综合分'], ['date', '最新'], ['upvotes', '最多点赞']].map(([val, label]) => (
+        {[['score','AI综合分'], ['velocity','上升速度'], ['date','最新'], ['upvotes','点赞数']].map(([val, label]) => (
           <button key={val} onClick={() => setSort(val)}
             style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #e5e7eb', background: sort === val ? '#f3f0ff' : '#fff', color: sort === val ? '#7c3aed' : '#374151', fontSize: 12, cursor: 'pointer', fontWeight: sort === val ? 700 : 400 }}>
             {label}
@@ -159,23 +198,11 @@ export default function SignalPage() {
         </button>
       </div>
 
-      {/* Low competition highlight */}
-      {lowCompHigh.length > 0 && !category && (
-        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>⚡ 低竞争高潜力（竞争&lt;4，总分&gt;7）</div>
-          {lowCompHigh.slice(0, 3).map(s => (
-            <SignalCard key={s.id} signal={s} />
-          ))}
-        </div>
-      )}
-
       {/* Signal list */}
       {loading ? (
         <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>加载中...</div>
       ) : signals.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>
-          暂无数据 — 等待首次抓取运行
-        </div>
+        <div style={{ textAlign: 'center', color: '#9ca3af', padding: 40 }}>暂无数据</div>
       ) : (
         signals.map(s => <SignalCard key={s.id} signal={s} />)
       )}
@@ -183,10 +210,10 @@ export default function SignalPage() {
       {/* Report history */}
       {reports.length > 0 && (
         <div style={{ marginTop: 32, borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>📋 历史报告</div>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>📋 推送历史</div>
           {reports.map(r => (
             <div key={r.id} style={{ fontSize: 13, color: '#6b7280', padding: '4px 0' }}>
-              {r.reportType === 'morning' ? '早报' : '晚报'} · {new Date(r.sentAt).toLocaleString('zh-CN')} · {r.signalCount} 条信号
+              {r.reportType === 'morning' ? '早报' : '晚报'} · {new Date(r.sentAt).toLocaleString('zh-CN')} · {r.signalCount} 条
             </div>
           ))}
         </div>

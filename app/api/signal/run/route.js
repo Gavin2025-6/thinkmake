@@ -6,8 +6,9 @@ import { sendTelegram } from '../../../lib/telegram'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// ─── Ensure tables exist (idempotent) ────────────────────────
+// ─── Ensure tables + columns exist (idempotent) ───────────────
 async function ensureTables() {
+  // Create Signal table
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Signal" (
       "id"         TEXT NOT NULL,
@@ -25,9 +26,28 @@ async function ensureTables() {
       CONSTRAINT "Signal_pkey" PRIMARY KEY ("id")
     )
   `)
-  await prisma.$executeRawUnsafe(`
-    CREATE UNIQUE INDEX IF NOT EXISTS "Signal_url_key" ON "Signal"("url")
-  `)
+  await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Signal_url_key" ON "Signal"("url")`
+  )
+  // Freshness columns — safe to run every time
+  const newCols = [
+    [`"postId"`,          `TEXT`],
+    [`"firstSeen"`,       `TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`],
+    [`"lastSeen"`,        `TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`],
+    [`"upvotesHistory"`,  `JSONB`],
+    [`"signalType"`,      `TEXT NOT NULL DEFAULT 'new'`],
+    [`"upvoteVelocity"`,  `DOUBLE PRECISION`],
+    [`"lastPushedType"`,  `TEXT`],
+  ]
+  for (const [col, type] of newCols) {
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE "Signal" ADD COLUMN IF NOT EXISTS ${col} ${type}`
+    )
+  }
+  await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "Signal_postId_key" ON "Signal"("postId") WHERE "postId" IS NOT NULL`
+  )
+  // SignalReport table
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "SignalReport" (
       "id"          TEXT NOT NULL,
@@ -45,27 +65,26 @@ const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 
 
 async function scoreSignals(signals) {
   if (!signals.length) return []
-
   const items = signals
     .map((s, i) => `${i + 1}. 标题: ${s.title}\n   内容: ${(s.content || '').slice(0, 200)}`)
     .join('\n\n')
 
-  const prompt = `你是一个产品机会分析师。分析以下来自Reddit的需求信号，判断每条是否值得做成产品。
+  const prompt = `你是产品机会分析师。分析以下Reddit需求信号。
 
 需求列表：
 ${items}
 
-对每条需求输出JSON，字段：
+对每条输出JSON，字段：
 - id: 序号(1开始)
 - category: 必须是以下之一: ${CATEGORIES.join(', ')}
-- market: 市场规模评分1-10
+- market: 市场规模1-10
 - feasibility: 技术可行性1-10
-- competition: 竞争程度1-10（分越低=竞争越少=越好）
-- monetization: 广告/变现潜力1-10
+- competition: 竞争程度1-10（越低=竞争越少=越好）
+- monetization: 变现潜力1-10
 - total: 综合总分1-10
 - advice: 一句话建议（中文，不超过30字）
 
-只输出JSON数组，不要其他文字。`
+只输出JSON数组。`
 
   try {
     const res = await anthropic.messages.create({
@@ -74,10 +93,9 @@ ${items}
       messages: [{ role: 'user', content: prompt }],
     })
     const text = res.content[0]?.text || '[]'
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) return signals.map(s => ({ ...s, aiScore: null, aiAnalysis: null, category: '🔧 其他' }))
-
-    const scores = JSON.parse(jsonMatch[0])
+    const match = text.match(/\[[\s\S]*\]/)
+    if (!match) throw new Error('No JSON array in response')
+    const scores = JSON.parse(match[0])
     return signals.map((s, i) => {
       const sc = scores.find(x => x.id === i + 1) || {}
       return {
@@ -95,67 +113,75 @@ ${items}
   }
 }
 
+// ─── Freshness helpers ────────────────────────────────────────
+function calcVelocity(history, now) {
+  if (!history || history.length < 2) return 0
+  const nowMs = now.getTime()
+  const last24 = history.filter(h => nowMs - new Date(h.t).getTime() < 86_400_000)
+  if (last24.length < 2) return 0
+  const oldest = last24[0]
+  const newest = last24[last24.length - 1]
+  const hours = (new Date(newest.t) - new Date(oldest.t)) / 3_600_000
+  if (hours < 0.5) return 0
+  return ((newest.v - oldest.v) / hours) * 24
+}
+
+function calcSignalType(firstSeen, aiScore, velocity) {
+  const ageHours = (Date.now() - new Date(firstSeen).getTime()) / 3_600_000
+  if (ageHours < 24) return 'new'
+  if (velocity > 50) return 'rising'
+  if (ageHours > 72 && (aiScore || 0) >= 7) return 'persistent'
+  return 'new'
+}
+
 // ─── Format report ────────────────────────────────────────────
-function formatReport(signals, reportType) {
+function fmtSignal(s, tag = '') {
+  const a = s.aiAnalysis || {}
+  const typeTag = tag ? `[${tag}] ` : ''
+  const vel = s.upvoteVelocity ? ` | ↑${Math.round(s.upvoteVelocity)}/天` : ''
+  return [
+    `📌 ${typeTag}${s.title}`,
+    `来源：r/${s.subreddit || s.source} | 综合分：${s.aiScore ? s.aiScore + '/10' : 'N/A'} | 👍${s.upvotes}${vel}`,
+    a.advice ? `💡 ${a.advice}` : '',
+    `🔗 ${s.url}`,
+  ].filter(Boolean).join('\n')
+}
+
+function formatReport(allSignals, reportType) {
   const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
   const label = reportType === 'morning' ? '早报' : '晚报'
-  const scored = signals.filter(s => s.aiScore).sort((a, b) => b.aiScore - a.aiScore)
 
-  const top3 = scored.slice(0, 3)
-  const lowComp = scored.filter(s => s.aiAnalysis?.competition < 4 && s.aiScore > 7)
+  const newSigs       = allSignals.filter(s => s.signalType === 'new')
+  const risingSigs    = allSignals.filter(s => s.signalType === 'rising').sort((a, b) => (b.upvoteVelocity || 0) - (a.upvoteVelocity || 0))
+  const persistSigs   = allSignals.filter(s => s.signalType === 'persistent').sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0))
+  const verified      = allSignals.filter(s => s.aiAnalysis?.competition < 4 && s.aiScore > 7)
 
-  const fmtSignal = s => {
-    const analysis = s.aiAnalysis || {}
+  const section = (header, signals, tag = '', limit = 5) => {
+    if (!signals.length) return []
     return [
-      `📌 ${s.title}`,
-      `来源：r/${s.subreddit || s.source} | 综合分：${s.aiScore}/10 | 👍${s.upvotes}`,
-      analysis.advice ? `💡 ${analysis.advice}` : '',
-      `🔗 ${s.url}`,
-    ].filter(Boolean).join('\n')
+      '',
+      header,
+      ...signals.slice(0, limit).map(s => `\n${fmtSignal(s, tag)}`),
+    ]
   }
 
-  const byCat = {}
-  for (const cat of CATEGORIES) {
-    const catSignals = scored.filter(s => s.category === cat).slice(0, 3)
-    if (catSignals.length) byCat[cat] = catSignals
-  }
-
-  const lines = [
+  return [
     `═══════════════════════════`,
     `📊 SignalHunt ${label}`,
     `生成时间：${now}`,
-    `本期信号总数：${signals.length} 条`,
+    `本期信号总数：${allSignals.length} 条`,
     `═══════════════════════════`,
+    ...section(`🆕 今日新信号 [${newSigs.length}条]\n过去24小时新出现的需求`, newSigs),
+    ...section(`🔥 热度上升 [${risingSigs.length}条]\n今日 upvote 暴涨，市场正在关注`, risingSigs),
+    ...section(`📊 持续热门 [${persistSigs.length}条]\n连续多天高分，长期真实需求`, persistSigs),
+    ...section(`✅ 已验证空白（竞争分<4，综合>7）`, verified),
     '',
-    `🏆 今日 TOP ${top3.length} 机会`,
-    ...top3.map((s, i) => `\n[${i + 1}]\n${fmtSignal(s)}`),
-    '',
-    `─────────────────────────`,
-    `按分类展示（每类 TOP 3）`,
-    `─────────────────────────`,
-  ]
-
-  for (const [cat, catSignals] of Object.entries(byCat)) {
-    lines.push(`\n${cat}`)
-    catSignals.forEach(s => lines.push(`\n${fmtSignal(s)}`))
-  }
-
-  if (lowComp.length) {
-    lines.push('')
-    lines.push(`─────────────────────────`)
-    lines.push(`⚡ 低竞争高潜力（竞争分<4，总分>7）`)
-    lowComp.forEach(s => lines.push(`\n${fmtSignal(s)}`))
-  }
-
-  lines.push('')
-  lines.push(`═══════════════════════════`)
-
-  return lines.join('\n')
+    `═══════════════════════════`,
+  ].join('\n')
 }
 
 // ─── Route handler ────────────────────────────────────────────
 export async function POST(request) {
-  // Verify cron secret
   const secret = request.headers.get('x-cron-secret')
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -166,67 +192,136 @@ export async function POST(request) {
   try {
     if (process.env.DATABASE_URL) await ensureTables()
 
-    // 1. Scrape
+    // ── 1. Scrape ─────────────────────────────────────────────
     console.log('[Signal] Scraping Reddit...')
     const raw = await scrapeReddit()
     console.log(`[Signal] Fetched ${raw.length} raw posts`)
 
-    // 2. Dedup against DB
-    const existingUrls = new Set(
-      (await prisma.$queryRawUnsafe(`SELECT url FROM "Signal"`)).map(r => r.url)
-    )
-    const newSignals = raw.filter(s => !existingUrls.has(s.url))
-    console.log(`[Signal] ${newSignals.length} new (${raw.length - newSignals.length} dupes skipped)`)
+    // ── 2. Load existing records ──────────────────────────────
+    const urls = raw.map(r => r.url)
+    const existing = urls.length
+      ? await prisma.$queryRawUnsafe(
+          `SELECT * FROM "Signal" WHERE url = ANY($1::text[])`,
+          urls
+        )
+      : []
+    const existingByUrl = Object.fromEntries(existing.map(e => [e.url, e]))
 
-    // 3. Score new signals in batches of 5
+    const now = new Date()
+    const toScore = []   // brand-new, need AI scoring
+    const toUpdate = []  // existing, update freshness only
+
+    for (const post of raw) {
+      const ex = existingByUrl[post.url]
+      if (!ex) {
+        toScore.push(post)
+      } else {
+        const history = Array.isArray(ex.upvotesHistory) ? ex.upvotesHistory : []
+        history.push({ t: now.toISOString(), v: post.upvotes })
+        const velocity = calcVelocity(history, now)
+        const signalType = calcSignalType(ex.firstSeen, ex.aiScore, velocity)
+        toUpdate.push({ ...ex, upvotes: post.upvotes, upvotesHistory: history, upvoteVelocity: velocity, signalType })
+      }
+    }
+
+    // ── 3. Score new signals ──────────────────────────────────
     const BATCH = 5
     const scored = []
-    for (let i = 0; i < newSignals.length; i += BATCH) {
-      const batch = newSignals.slice(i, i + BATCH)
-      const result = await scoreSignals(batch)
+    for (let i = 0; i < toScore.length; i += BATCH) {
+      const result = await scoreSignals(toScore.slice(i, i + BATCH))
       scored.push(...result)
     }
 
-    // 4. Save to DB
+    // ── 4. Insert new ─────────────────────────────────────────
     for (const s of scored) {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "Signal" (id, source, subreddit, category, title, url, content, upvotes, date, "aiScore", "aiAnalysis", "createdAt")
-         VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, NOW())
-         ON CONFLICT (url) DO NOTHING`,
-        s.source, s.subreddit || null, s.category || null, s.title, s.url,
-        s.content || null, s.upvotes, s.date,
-        s.aiScore || null, s.aiAnalysis ? JSON.stringify(s.aiAnalysis) : null
+      const hist = JSON.stringify([{ t: now.toISOString(), v: s.upvotes }])
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "Signal"
+          (id, "postId", source, subreddit, category, title, url, content, upvotes, date,
+           "aiScore", "aiAnalysis", "firstSeen", "lastSeen",
+           "upvotesHistory", "signalType", "upvoteVelocity", "createdAt")
+        VALUES
+          (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, $7, $8, $9,
+           $10, $11::jsonb, NOW(), NOW(),
+           $12::jsonb, 'new', 0, NOW())
+        ON CONFLICT (url) DO NOTHING`,
+        s.postId || null, s.source, s.subreddit || null, s.category || null,
+        s.title, s.url, s.content || null, s.upvotes, s.date,
+        s.aiScore || null, s.aiAnalysis ? JSON.stringify(s.aiAnalysis) : null,
+        hist
       )
     }
 
-    // 5. Query today's top signals for report
-    const todaySignals = await prisma.$queryRawUnsafe(`
+    // ── 5. Update existing ────────────────────────────────────
+    for (const s of toUpdate) {
+      await prisma.$executeRawUnsafe(`
+        UPDATE "Signal"
+        SET upvotes = $1, "lastSeen" = NOW(),
+            "upvotesHistory" = $2::jsonb,
+            "upvoteVelocity" = $3,
+            "signalType" = $4
+        WHERE url = $5`,
+        s.upvotes,
+        JSON.stringify(s.upvotesHistory),
+        s.upvoteVelocity,
+        s.signalType,
+        s.url
+      )
+    }
+
+    // ── 6. Decide what to push ────────────────────────────────
+    // Push: new (never pushed) + upgraded signals
+    const allActive = await prisma.$queryRawUnsafe(`
       SELECT * FROM "Signal"
-      WHERE "createdAt" > NOW() - INTERVAL '24 hours'
+      WHERE "lastSeen" > NOW() - INTERVAL '48 hours'
       ORDER BY "aiScore" DESC NULLS LAST
-      LIMIT 50
+      LIMIT 100
     `)
 
-    // 6. Generate and push report
-    const report = formatReport(todaySignals.length ? todaySignals : scored, reportType)
+    const toPush = allActive.filter(s => {
+      if (!s.lastPushedType) return true           // never pushed
+      if (s.signalType !== s.lastPushedType) return true  // upgraded
+      return false
+    })
+
+    if (!toPush.length) {
+      console.log('[Signal] Nothing new to push')
+      return NextResponse.json({ ok: true, newSignals: scored.length, pushed: 0 })
+    }
+
+    // Mark upgrade signals
+    const withTag = toPush.map(s => ({
+      ...s,
+      pushTag: s.lastPushedType && s.signalType !== s.lastPushedType ? '信号升级' : '',
+    }))
+
+    // ── 7. Format + send report ───────────────────────────────
+    const report = formatReport(withTag, reportType)
     await sendTelegram(report)
 
-    // 7. Save report
+    // ── 8. Mark as pushed ─────────────────────────────────────
+    for (const s of toPush) {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Signal" SET "lastPushedType" = $1 WHERE id = $2`,
+        s.signalType, s.id
+      )
+    }
+
+    // ── 9. Save report ────────────────────────────────────────
     await prisma.$executeRawUnsafe(
       `INSERT INTO "SignalReport" (id, "reportType", content, "signalCount", "sentAt")
        VALUES (gen_random_uuid()::text, $1, $2, $3, NOW())`,
-      reportType, report, todaySignals.length || scored.length
+      reportType, report, toPush.length
     )
 
-    console.log(`[Signal] Done — ${scored.length} new signals, report sent`)
-    return NextResponse.json({ ok: true, newSignals: scored.length, total: todaySignals.length })
+    console.log(`[Signal] Done — ${scored.length} new, ${toUpdate.length} updated, ${toPush.length} pushed`)
+    return NextResponse.json({ ok: true, newSignals: scored.length, updated: toUpdate.length, pushed: toPush.length })
   } catch (err) {
     console.error('[Signal] Error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
 
-// Allow GET for manual test trigger (with secret in query)
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   if (searchParams.get('secret') !== process.env.CRON_SECRET) {
