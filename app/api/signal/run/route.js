@@ -418,12 +418,14 @@ export async function POST(request) {
       ORDER BY "aiScore" DESC NULLS LAST LIMIT 100`)
 
     const toPush = active.filter(s => !s.lastPushedType || s.signalType !== s.lastPushedType)
+    console.log(`[Signal] active:${active.length} toPush:${toPush.length} trendAlerts:${trendAlerts.length}`)
     if (!toPush.length && !trendAlerts.length) {
       console.log('[Signal] Nothing to push')
       return NextResponse.json({ ok: true, sources: srcCounts, newSignals: scored.length, pushed: 0 })
     }
 
     const report = formatReport(active, reportType, trendAlerts)
+    console.log('[Signal] Sending Telegram report...')
     await sendTelegram(report)
 
     for (const s of toPush) {
