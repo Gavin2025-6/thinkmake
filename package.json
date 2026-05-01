@@ -10,6 +10,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
     "@prisma/client": "^5.22.0",
+    "app-store-scraper": "^0.18.0",
+    "google-play-scraper": "^10.1.2",
     "next": "^14.2.0",
     "prisma": "^5.22.0",
     "react": "^18",

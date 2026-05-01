@@ -48,16 +48,20 @@ model Lead {
 model Signal {
   id        String   @id @default(cuid())
   postId    String?  @unique
+  platform  String   @default("reddit")
   source    String
   subreddit String?
+  appName   String?
+  rating    Int?
   category  String?
   title     String
   url       String   @unique
   content   String?
   upvotes   Int      @default(0)
   date      DateTime
-  aiScore   Float?
+  aiScore         Float?
   aiAnalysis      Json?
+  clusterId       String?
   firstSeen       DateTime @default(now())
   lastSeen        DateTime @default(now())
   upvotesHistory  Json?
@@ -65,6 +69,22 @@ model Signal {
   upvoteVelocity  Float?
   lastPushedType  String?
   createdAt       DateTime @default(now())
+}
+
+model SignalCluster {
+  id                  String   @id @default(cuid())
+  name                String
+  category            String?
+  clusterSize         Int      @default(1)
+  totalSignalStrength Int      @default(0)
+  sourcesCount        Int      @default(0)
+  platforms           Json?
+  dayStreak           Int      @default(1)
+  firstSeen           DateTime @default(now())
+  lastSeen            DateTime @default(now())
+  lastStreakDate      String?
+  trendAlerted        Boolean  @default(false)
+  createdAt           DateTime @default(now())
 }
 
 model SignalReport {
