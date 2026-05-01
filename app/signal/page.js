@@ -3,13 +3,19 @@ import { useState, useEffect, useCallback } from 'react'
 
 // ─── Constants ───────────────────────────────────────────────
 const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📱 生活类', '🔧 其他']
-const PLATFORMS  = ['reddit', 'hackernews', 'appstore', 'googleplay', 'youtube']
+const PLATFORMS  = ['reddit', 'hackernews', 'appstore', 'googleplay', 'youtube', 'producthunt']
 const PLATFORM_META = {
-  reddit:     { icon: '👾', label: 'Reddit' },
-  hackernews: { icon: '🟠', label: 'Hacker News' },
-  appstore:   { icon: '🍎', label: 'App Store' },
-  googleplay: { icon: '🤖', label: 'Google Play' },
-  youtube:    { icon: '▶️', label: 'YouTube' },
+  reddit:       { icon: '👾', label: 'Reddit' },
+  hackernews:   { icon: '🟠', label: 'Hacker News' },
+  appstore:     { icon: '🍎', label: 'App Store' },
+  googleplay:   { icon: '🤖', label: 'Google Play' },
+  youtube:      { icon: '▶️', label: 'YouTube' },
+  producthunt:  { icon: '🐱', label: 'Product Hunt' },
+}
+const VALIDATION_META = {
+  blank:   { label: '✅ 验证空白', bg: '#f0fdf4', color: '#15803d' },
+  weak:    { label: '⚠️ 有竞品',   bg: '#fffbeb', color: '#92400e' },
+  covered: { label: '❌ 已有免费', bg: '#fef2f2', color: '#991b1b' },
 }
 const TYPE_META = {
   new:        { label: '🆕 新信号',   bg: '#eff6ff', color: '#1d4ed8' },
@@ -27,9 +33,13 @@ function SignalCard({ signal, blurred }) {
   const a = signal.aiAnalysis || {}
   const tm = TYPE_META[signal.signalType] || TYPE_META.new
   const pm = PLATFORM_META[signal.platform] || { icon: '📡', label: signal.platform }
-  const validity = a.competition != null
-    ? a.competition < 4 ? '✅ 空白' : a.competition < 7 ? '⚠️ 有竞品' : '❌ 已有免费'
-    : ''
+
+  // Prefer stored validationStatus, fall back to AI competition score
+  const vm = signal.validationStatus
+    ? VALIDATION_META[signal.validationStatus]
+    : a.competition != null
+      ? a.competition < 4 ? VALIDATION_META.blank : a.competition < 7 ? VALIDATION_META.weak : VALIDATION_META.covered
+      : null
 
   return (
     <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, background: '#fff', filter: blurred ? 'blur(4px)' : 'none', userSelect: blurred ? 'none' : 'auto', pointerEvents: blurred ? 'none' : 'auto' }}>
@@ -37,21 +47,32 @@ function SignalCard({ signal, blurred }) {
         {badge(tm.label, tm.bg, tm.color)}
         {signal.category && badge(signal.category, '#f3f0ff', '#7c3aed')}
         {signal.aiScore && badge(`${signal.aiScore.toFixed(1)}/10`, signal.aiScore >= 8 ? '#d1fae5' : signal.aiScore >= 6 ? '#fef3c7' : '#f3f4f6', signal.aiScore >= 8 ? '#065f46' : signal.aiScore >= 6 ? '#92400e' : '#6b7280')}
-        {validity && badge(validity, '#f9fafb', '#374151')}
+        {vm && badge(vm.label, vm.bg, vm.color)}
         <span style={{ marginLeft: 'auto', fontSize: 11, color: '#9ca3af' }}>
           {pm.icon} {pm.label} · 👍{signal.upvotes}{signal.upvoteVelocity > 0 ? ` ↑${Math.round(signal.upvoteVelocity)}/天` : ''}
         </span>
       </div>
       <div style={{ fontWeight: 600, fontSize: 14, color: '#111', marginBottom: a.advice ? 4 : 8, lineHeight: 1.4 }}>{signal.title}</div>
       {a.advice && <div style={{ fontSize: 13, color: '#7c3aed', marginBottom: 8 }}>💡 {a.advice}</div>}
-      <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
+      <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
         <a href={signal.url} target="_blank" rel="noopener" style={{ color: '#6b7280', textDecoration: 'underline' }}>原帖 →</a>
+        {signal.githubExists && signal.githubUrl && (
+          <a href={signal.githubUrl} target="_blank" rel="noopener" style={{ color: '#374151', textDecoration: 'underline' }}>
+            ⭐{signal.githubStars?.toLocaleString()} GitHub →
+          </a>
+        )}
+        {signal.validationStatus === 'blank' && !signal.githubExists && (
+          <span style={{ color: '#15803d', fontWeight: 600 }}>无开源方案</span>
+        )}
         {a.total && <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: 0, fontSize: 12 }}>{open ? '收起' : '评分详情'}</button>}
       </div>
       {open && a.total && (
         <div style={{ marginTop: 8, background: '#f9fafb', borderRadius: 8, padding: '8px 12px', fontSize: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
           <span>📈 市场：{a.market}/10</span><span>⚙️ 可行性：{a.feasibility}/10</span>
           <span>🥊 竞争：{a.competition}/10 <span style={{ color: '#9ca3af' }}>(低=好)</span></span><span>💰 变现：{a.monetization}/10</span>
+          {signal.freeSolutionScore != null && (
+            <span style={{ gridColumn: '1/-1' }}>🔓 免费方案指数：{signal.freeSolutionScore}/10 <span style={{ color: '#9ca3af' }}>(低=机会大)</span></span>
+          )}
         </div>
       )}
     </div>
@@ -142,8 +163,8 @@ function LandingPage({ onRegister }) {
       {/* Feature grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
         {[
-          ['👾🟠🍎🤖▶️', '5大平台', 'Reddit · HN · App Store · Google Play · YouTube'],
-          ['🤖', 'AI 自动评分', '市场规模、可行性、竞争程度、变现潜力，综合打分'],
+          ['👾🟠🍎🤖▶️🐱', '6大平台', 'Reddit · HN · App Store · Google Play · YouTube · Product Hunt'],
+          ['🤖', 'AI 自动评分 + GitHub验证', '市场规模、可行性、竞争程度、变现潜力，自动搜索开源竞品并调整评分'],
           ['🔔', '每日推送', '北京21:00 & 09:00，多伦多09:00 & 21:00，准时到 Telegram'],
         ].map(([icon, title, desc]) => (
           <div key={title} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
@@ -188,13 +209,14 @@ export default function SignalPage() {
   const [stats, setStats]           = useState({})
   const [clusters, setClusters]     = useState([])
 
-  const [category, setCategory]     = useState('')
-  const [platform, setPlatform]     = useState('')
-  const [signalType, setSignalType] = useState('')
-  const [sort, setSort]             = useState('score')
-  const [search, setSearch]         = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [loading, setLoading]       = useState(true)
+  const [category, setCategory]             = useState('')
+  const [platform, setPlatform]             = useState('')
+  const [signalType, setSignalType]         = useState('')
+  const [validationFilter, setValidation]   = useState('')
+  const [sort, setSort]                     = useState('score')
+  const [search, setSearch]                 = useState('')
+  const [searchInput, setSearchInput]       = useState('')
+  const [loading, setLoading]               = useState(true)
 
   // Restore auth from localStorage
   useEffect(() => {
@@ -213,7 +235,7 @@ export default function SignalPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ sort, ...(category ? { category } : {}), ...(platform ? { platform } : {}), ...(signalType ? { type: signalType } : {}), ...(search ? { q: search } : {}) })
+      const params = new URLSearchParams({ sort, ...(category ? { category } : {}), ...(platform ? { platform } : {}), ...(signalType ? { type: signalType } : {}), ...(validationFilter ? { validation: validationFilter } : {}), ...(search ? { q: search } : {}) })
       const res  = await fetch(`/api/signal/list?${params}`)
       const data = await res.json()
       setSignals(data.signals || [])
@@ -222,7 +244,7 @@ export default function SignalPage() {
       setClusters(data.clusters || [])
     } catch {}
     setLoading(false)
-  }, [sort, category, platform, signalType, search])
+  }, [sort, category, platform, signalType, validationFilter, search])
 
   useEffect(() => { if (user || unlocked) load() }, [load, user, unlocked])
 
@@ -270,7 +292,10 @@ export default function SignalPage() {
   const FREE_LIMIT = 3
   const visibleSignals  = canSeeAll ? signals : signals.slice(0, FREE_LIMIT)
   const blurredSignals  = canSeeAll ? [] : signals.slice(FREE_LIMIT, FREE_LIMIT + 3)
-  const verified = signals.filter(s => s.aiAnalysis?.competition < 4 && s.aiScore > 7)
+  const verified = signals.filter(s =>
+    (s.validationStatus === 'blank' || (!s.validationStatus && (s.aiAnalysis?.competition ?? 10) < 4)) &&
+    (s.aiScore || 0) > 7
+  )
 
   const pill = (label, active, onClick) => (
     <button onClick={onClick} style={{ padding: '5px 11px', borderRadius: 20, border: '1px solid #e5e7eb', background: active ? '#7c3aed' : '#fff', color: active ? '#fff' : '#374151', fontSize: 12, cursor: 'pointer' }}>
@@ -286,7 +311,7 @@ export default function SignalPage() {
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20, gap: 12 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800 }}>🔭 Signal<span style={{ color: '#7c3aed' }}>Hunt</span></div>
-          <div style={{ fontSize: 12, color: '#9ca3af' }}>需求信号监控 · 5大平台 · AI评分</div>
+          <div style={{ fontSize: 12, color: '#9ca3af' }}>需求信号监控 · 6大平台 · AI评分 · GitHub验证</div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
           {user ? (
@@ -303,11 +328,11 @@ export default function SignalPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 16 }}>
+      {/* Stats — signal type */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 8 }}>
         {[
-          { l: '历史总量', v: stats.total },
-          { l: '今日新增', v: stats.today },
+          { l: '历史总量',   v: stats.total },
+          { l: '今日新增',   v: stats.today },
           { l: '🆕 新信号', v: stats.countNew,        t: 'new' },
           { l: '🔥 上升中', v: stats.countRising,     t: 'rising' },
           { l: '📊 持续热门', v: stats.countPersistent, t: 'persistent' },
@@ -318,6 +343,23 @@ export default function SignalPage() {
             <div style={{ fontSize: 10, color: '#6b7280' }}>{l}</div>
           </div>
         ))}
+      </div>
+      {/* Stats — validation status */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+        {[
+          { l: '✅ 验证空白', v: stats.countBlank,   val: 'blank',   bg: '#f0fdf4', border: '#86efac', active: '#15803d' },
+          { l: '⚠️ 有竞品',   v: stats.countWeak,    val: 'weak',    bg: '#fffbeb', border: '#fcd34d', active: '#92400e' },
+          { l: '❌ 已有免费', v: stats.countCovered, val: 'covered', bg: '#fef2f2', border: '#fca5a5', active: '#991b1b' },
+        ].map(({ l, v, val, bg, border, active }) => {
+          const isActive = validationFilter === val
+          return (
+            <div key={val} onClick={() => setValidation(validationFilter === val ? '' : val)}
+              style={{ background: isActive ? bg : '#f9fafb', border: `1px solid ${isActive ? border : '#e5e7eb'}`, borderRadius: 10, padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: isActive ? active : '#7c3aed' }}>{v ?? 0}</div>
+              <div style={{ fontSize: 10, color: '#6b7280' }}>{l}</div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Verified highlight */}

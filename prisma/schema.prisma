@@ -66,9 +66,14 @@ model Signal {
   lastSeen        DateTime @default(now())
   upvotesHistory  Json?
   signalType      String   @default("new")
-  upvoteVelocity  Float?
-  lastPushedType  String?
-  createdAt       DateTime @default(now())
+  upvoteVelocity    Float?
+  lastPushedType    String?
+  githubExists      Boolean?
+  githubStars       Int?
+  githubUrl         String?
+  freeSolutionScore Float?
+  validationStatus  String?
+  createdAt         DateTime @default(now())
 }
 
 model SignalCluster {
