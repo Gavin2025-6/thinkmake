@@ -4,20 +4,20 @@
 
 const TARGETS = [
   // PDF tools
-  { appId: '469337564',  appName: 'Adobe Acrobat',  category: '🛠 工具类' },
-  { appId: '743974925',  appName: 'PDF Expert',      category: '🛠 工具类' },
-  { appId: '595563753',  appName: 'Scanner Pro',     category: '🛠 工具类' },
+  { id: 469337564,  appName: 'Adobe Acrobat',  category: '🛠 工具类' },
+  { id: 743974925,  appName: 'PDF Expert',      category: '🛠 工具类' },
+  { id: 595563753,  appName: 'Scanner Pro',     category: '🛠 工具类' },
   // Image tools
-  { appId: '1149994032', appName: 'Facetune',        category: '🎨 创意类' },
-  { appId: '878783582',  appName: 'Lightroom',       category: '🎨 创意类' },
-  { appId: '588338866',  appName: 'VSCO',            category: '🎨 创意类' },
+  { id: 1149994032, appName: 'Facetune',        category: '🎨 创意类' },
+  { id: 878783582,  appName: 'Lightroom',       category: '🎨 创意类' },
+  { id: 588173303,  appName: 'VSCO',            category: '🎨 创意类' },
   // Video tools
-  { appId: '1062022008', appName: 'LumaFusion',      category: '🎨 创意类' },
-  { appId: '1500855883', appName: 'CapCut',          category: '🎨 创意类' },
-  { appId: '997340941',  appName: 'InShot',          category: '🎨 创意类' },
+  { id: 1062022008, appName: 'LumaFusion',      category: '🎨 创意类' },
+  { id: 1500855883, appName: 'CapCut',          category: '🎨 创意类' },
+  { id: 997340941,  appName: 'InShot',          category: '🎨 创意类' },
   // Audio tools
-  { appId: '682658836',  appName: 'GarageBand',      category: '🎨 创意类' },
-  { appId: '1018780185', appName: 'Ferrite',         category: '🎨 创意类' },
+  { id: 408709785,  appName: 'GarageBand',      category: '🎨 创意类' },
+  { id: 1018780185, appName: 'Ferrite',         category: '🎨 创意类' },
 ]
 
 const KEYWORDS = ['too expensive', 'wish it was free', 'need free version',
@@ -39,7 +39,7 @@ export async function scrapeAppStore() {
   for (const target of TARGETS) {
     try {
       const reviews = await store.reviews({
-        appId: target.appId,
+        id: target.id,
         sort: store.sort.HELPFUL,
         num: 100,
         country: 'us',
@@ -61,7 +61,7 @@ export async function scrapeAppStore() {
           rating: r.score,
           category: target.category,
           title: `[${target.appName}] ${r.title || text.slice(0, 80)}`,
-          url: r.url || `https://apps.apple.com/us/app/id${target.appId}`,
+          url: r.url || `https://apps.apple.com/us/app/id${target.id}`,
           content: r.text?.slice(0, 600) || '',
           upvotes: 0,
           date: reviewDate,
