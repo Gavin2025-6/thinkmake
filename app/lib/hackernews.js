@@ -24,11 +24,11 @@ export async function scrapeHackerNews() {
     const ids = [...new Set([...askIds.slice(0, 100), ...newIds.slice(0, 100)])]
     const items = (await Promise.all(ids.slice(0, 80).map(fetchItem))).filter(Boolean)
 
-    const twodays = Date.now() - 48 * 3600 * 1000
+    const sevendays = Date.now() - 7 * 24 * 3600 * 1000
 
     for (const item of items) {
       if (!item || item.deleted || item.dead) continue
-      if ((item.time * 1000) < twodays) continue
+      if ((item.time * 1000) < sevendays) continue
 
       const text = `${item.title || ''} ${item.text || ''}`.toLowerCase()
       const matched = KEYWORDS.some(kw => text.includes(kw))

@@ -45,12 +45,13 @@ export async function scrapeReddit() {
           if (seen.has(postUrl)) continue
           seen.add(postUrl)
 
-          // Only posts from last 48 hours
+          // Only posts from last 7 days
           const ageDays = (Date.now() / 1000 - post.created_utc) / 86400
-          if (ageDays > 2) continue
+          if (ageDays > 7) continue
 
           results.push({
             postId: `reddit_${post.id}`,
+            platform: 'reddit',
             source: 'reddit',
             subreddit,
             title: post.title || '',
