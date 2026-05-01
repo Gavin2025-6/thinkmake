@@ -44,3 +44,26 @@ model Lead {
 
   createdAt DateTime @default(now())
 }
+
+model Signal {
+  id        String   @id @default(cuid())
+  source    String
+  subreddit String?
+  category  String?
+  title     String
+  url       String   @unique
+  content   String?
+  upvotes   Int      @default(0)
+  date      DateTime
+  aiScore   Float?
+  aiAnalysis Json?
+  createdAt DateTime @default(now())
+}
+
+model SignalReport {
+  id          String   @id @default(cuid())
+  reportType  String
+  content     String
+  signalCount Int
+  sentAt      DateTime @default(now())
+}
