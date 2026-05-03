@@ -67,11 +67,15 @@ function SignalCard({ signal, blurred }) {
         {a.total && <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7c3aed', padding: 0, fontSize: 12 }}>{open ? '收起' : '评分详情'}</button>}
       </div>
       {open && a.total && (
-        <div style={{ marginTop: 8, background: '#f9fafb', borderRadius: 8, padding: '8px 12px', fontSize: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-          <span>📈 市场：{a.market}/10</span><span>⚙️ 可行性：{a.feasibility}/10</span>
-          <span>🥊 竞争：{a.competition}/10 <span style={{ color: '#9ca3af' }}>(低=好)</span></span><span>💰 变现：{a.monetization}/10</span>
+        <div style={{ marginTop: 8, background: '#f9fafb', borderRadius: 8, padding: '8px 12px', fontSize: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+            {a.market      != null && <span>📈 市场：{a.market}/10</span>}
+            {a.feasibility != null && <span>⚙️ 可行性：{a.feasibility}/10</span>}
+            {a.competition != null && <span>🥊 竞争：{a.competition}/10 <span style={{ color: '#9ca3af' }}>(低=好)</span></span>}
+            {a.monetization!= null && <span>💰 变现：{a.monetization}/10</span>}
+          </div>
           {signal.freeSolutionScore != null && (
-            <span style={{ gridColumn: '1/-1' }}>🔓 免费方案指数：{signal.freeSolutionScore}/10 <span style={{ color: '#9ca3af' }}>(低=机会大)</span></span>
+            <div style={{ marginTop: 3 }}>🔓 免费方案指数：{signal.freeSolutionScore}/10 <span style={{ color: '#9ca3af' }}>(低=机会大)</span></div>
           )}
         </div>
       )}

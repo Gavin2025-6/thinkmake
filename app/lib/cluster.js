@@ -1,42 +1,47 @@
-import Anthropic from '@anthropic-ai/sdk'
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+// Keyword-based clustering — no AI needed, zero API cost
 
-// Assign signals to clusters using Claude for semantic matching.
-// Returns array of {signalIdx, clusterId (existing or 'new'), clusterName}
+const STOP = new Set([
+  'a','an','the','and','or','in','on','to','for','of','with','is','are','was',
+  'were','be','have','has','it','this','that','can','not','no','any','some',
+  'need','want','free','app','tool','make','just','get','use','does','someone',
+])
+
+function extractWords(text) {
+  return text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !STOP.has(w))
+}
+
+// Returns same shape as before: [{idx, action, clusterId?} | {idx, action, clusterName}]
 export async function clusterSignals(newSignals, existingClusters) {
-  if (!newSignals.length) return []
+  const results = []
 
-  const existing = existingClusters.map((c, i) => `${i + 1}. "${c.name}" (id:${c.id})`).join('\n')
-  const incoming = newSignals.map((s, i) => `${i + 1}. ${s.title}`).join('\n')
+  for (let i = 0; i < newSignals.length; i++) {
+    const sig     = newSignals[i]
+    const sigSet  = new Set(extractWords(sig.title))
 
-  const prompt = `You are a product signal analyst. Group these new user pain-point signals.
+    let bestCluster = null
+    let bestOverlap = 1  // require at least 2 matching words
 
-Existing demand clusters:
-${existing || '(none yet)'}
+    for (const cluster of existingClusters) {
+      const clusterSet = new Set(extractWords(cluster.name))
+      const overlap    = [...sigSet].filter(w => clusterSet.has(w)).length
+      if (overlap > bestOverlap) {
+        bestOverlap  = overlap
+        bestCluster  = cluster
+      }
+    }
 
-New signals to classify:
-${incoming}
-
-For each new signal, either:
-- Match to an existing cluster if semantically similar (>80% same user need)
-- Create a new cluster with a concise English name (3-6 words, e.g. "Free PDF merger tool")
-
-Output JSON array only:
-[{"idx":1,"action":"match","clusterId":"existing_id"},
- {"idx":2,"action":"new","clusterName":"Free video editor app"},
- ...]`
-
-  try {
-    const res = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const text = res.content[0]?.text || '[]'
-    const match = text.match(/\[[\s\S]*\]/)
-    return match ? JSON.parse(match[0]) : []
-  } catch (e) {
-    console.error('[Cluster] Claude error:', e.message)
-    return []
+    if (bestCluster) {
+      results.push({ idx: i + 1, action: 'match', clusterId: bestCluster.id })
+    } else {
+      // Cluster name = first 5 meaningful words of title
+      const words       = extractWords(sig.title).slice(0, 5)
+      const clusterName = words.length ? words.join(' ') : sig.title.slice(0, 50)
+      results.push({ idx: i + 1, action: 'new', clusterName })
+    }
   }
+
+  return results
 }

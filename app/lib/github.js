@@ -66,7 +66,7 @@ export async function validateWithGitHub(title) {
 export function applyScoreAdjustment(signal) {
   if (!signal.aiScore || !signal.validationStatus) return signal
   const adj = signal.validationStatus === 'covered' ? -3
-    : signal.validationStatus === 'blank' ? 2 : 0
+    : signal.validationStatus === 'blank' ? 3 : 0
   if (adj === 0) return signal
   return { ...signal, aiScore: Math.max(1, Math.min(10, signal.aiScore + adj)) }
 }

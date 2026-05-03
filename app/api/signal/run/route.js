@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { scrapeReddit } from '../../../lib/reddit'
@@ -10,8 +9,6 @@ import { scrapeProductHunt } from '../../../lib/producthunt'
 import { clusterSignals } from '../../../lib/cluster'
 import { validateWithGitHub, applyScoreAdjustment } from '../../../lib/github'
 import { sendTelegram } from '../../../lib/telegram'
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 // ─── Ensure tables + columns ──────────────────────────────────
 async function ensureTables() {
@@ -74,42 +71,52 @@ async function ensureTables() {
     )`)
 }
 
-// ─── AI scoring ───────────────────────────────────────────────
-const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📱 生活类', '🔧 其他']
+// ─── Rule-based scoring (zero API cost) ──────────────────────
+const CATEGORY_RULES = [
+  { cat: '🛠 工具类', words: ['tool','tools','software','plugin','extension','utility',
+      'editor','converter','manager','tracker','scanner','reader','parser','automation','workflow'] },
+  { cat: '🎨 创意类', words: ['image','video','audio','photo','music','design','art',
+      'creative','edit','record','draw','animation','render','podcast','stream','color','font'] },
+  { cat: '💰 金融类', words: ['money','finance','budget','tax','invoice','payment',
+      'accounting','expense','cost','billing','subscription','revenue','salary','bank','crypto'] },
+  { cat: '🏥 健康类', words: ['health','fitness','workout','diet','sleep','medical',
+      'wellness','exercise','calories','weight','yoga','therapy','mental','nutrition'] },
+]
 
-async function scoreSignals(signals) {
-  if (!signals.length) return []
-  const items = signals.map((s, i) =>
-    `${i + 1}. [${s.platform}] ${s.title}\n   ${(s.content || '').slice(0, 150)}`
-  ).join('\n\n')
-
-  const prompt = `产品机会分析师。分析这些来自不同平台的用户需求信号。
-
-${items}
-
-每条输出JSON：id(1开始), category(${CATEGORIES.join('/')}), market(1-10), feasibility(1-10), competition(1-10,越低竞争越少), monetization(1-10), total(1-10), advice(中文≤30字)
-
-只输出JSON数组。`
-
-  try {
-    const res = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6', max_tokens: 1500,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const match = (res.content[0]?.text || '').match(/\[[\s\S]*\]/)
-    if (!match) throw new Error('no JSON')
-    const scores = JSON.parse(match[0])
-    return signals.map((s, i) => {
-      const sc = scores.find(x => x.id === i + 1) || {}
-      return { ...s, category: sc.category || '🔧 其他', aiScore: sc.total || null,
-        aiAnalysis: sc.total ? { market: sc.market, feasibility: sc.feasibility,
-          competition: sc.competition, monetization: sc.monetization,
-          total: sc.total, advice: sc.advice } : null }
-    })
-  } catch (e) {
-    console.error('[Score]', e.message)
-    return signals.map(s => ({ ...s, aiScore: null, aiAnalysis: null, category: '🔧 其他' }))
+function detectCategory(text) {
+  const lower = text.toLowerCase()
+  for (const { cat, words } of CATEGORY_RULES) {
+    if (words.some(w => lower.includes(w))) return cat
   }
+  return '📱 生活类'
+}
+
+// Returns null for low-signal noise (upvotes < 5)
+function ruleScore(signal) {
+  const u = signal.upvotes || 0
+  if (u < 5) return null
+
+  let score
+  if (u > 100)     score = 10
+  else if (u > 50) score = 8
+  else if (u > 20) score = 6
+  else             score = 4
+
+  const text = `${signal.title} ${signal.content || ''}`
+  return { ...signal, aiScore: score, category: detectCategory(text), aiAnalysis: null }
+}
+
+// Build advice text after GitHub validation result is known
+const ADVICE = {
+  blank:   '市场空白，无成熟免费方案，值得考虑',
+  weak:    '有竞品但存在差异化空间',
+  covered: '市场已有成熟方案，慎入',
+  none:    '市场信号真实，竞争情况待验证',
+}
+
+function buildAnalysis(signal) {
+  const advice = ADVICE[signal.validationStatus || 'none']
+  return { ...signal, aiAnalysis: { total: signal.aiScore, advice } }
 }
 
 // ─── GitHub validation ────────────────────────────────────────
@@ -363,17 +370,15 @@ export async function POST(request) {
       }
     }
 
-    // ── 3. Score new signals (batch=5) ────────────────────────
-    const BATCH = 5
-    let scored = []
-    for (let i = 0; i < toScore.length; i += BATCH) {
-      scored.push(...await scoreSignals(toScore.slice(i, i + BATCH)))
-    }
+    // ── 3. Rule-based scoring (zero API cost) ────────────────
+    let scored = toScore.map(ruleScore).filter(Boolean)
+    console.log(`[Signal] Rule-scored: ${scored.length}/${toScore.length} (${toScore.length - scored.length} discarded, upvotes<5)`)
 
-    // ── 4. GitHub validation (high-score signals only) ────────
+    // ── 4. GitHub validation + build advice ───────────────────
     if (scored.length) {
       console.log('[Signal] Running GitHub validation...')
       scored = await runGitHubValidation(scored)
+      scored = scored.map(buildAnalysis)
     }
 
     // ── 5. Insert new ─────────────────────────────────────────
@@ -440,6 +445,7 @@ export async function POST(request) {
     )
 
     console.log(`[Signal] Done — new:${scored.length} updated:${toUpdate.length} pushed:${toPush.length}`)
+    console.log('[Cost] API调用：0次，费用：$0.00')
     return NextResponse.json({ ok: true, sources: srcCounts, newSignals: scored.length, updated: toUpdate.length, pushed: toPush.length })
   } catch (err) {
     console.error('[Signal] Error:', err)
