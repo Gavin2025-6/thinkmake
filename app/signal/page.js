@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 
 // ─── Constants ───────────────────────────────────────────────
 const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📱 生活类', '🔧 其他']
-const PLATFORMS  = ['reddit', 'hackernews', 'appstore', 'googleplay', 'youtube', 'producthunt']
+const PLATFORMS  = ['reddit', 'hackernews', 'appstore', 'googleplay', 'youtube', 'producthunt', 'v2ex']
 const PLATFORM_META = {
   reddit:       { icon: '👾', label: 'Reddit' },
   hackernews:   { icon: '🟠', label: 'Hacker News' },
@@ -11,6 +11,12 @@ const PLATFORM_META = {
   googleplay:   { icon: '🤖', label: 'Google Play' },
   youtube:      { icon: '▶️', label: 'YouTube' },
   producthunt:  { icon: '🐱', label: 'Product Hunt' },
+  v2ex:         { icon: '🟦', label: 'V2EX' },
+}
+const STRENGTH_META = {
+  high:   { icon: '🔴', label: '强需求', bg: '#fef2f2', color: '#991b1b' },
+  medium: { icon: '🟡', label: '中需求', bg: '#fffbeb', color: '#92400e' },
+  low:    { icon: '🟢', label: '弱信号', bg: '#f0fdf4', color: '#15803d' },
 }
 const VALIDATION_META = {
   blank:   { label: '✅ 验证空白', bg: '#f0fdf4', color: '#15803d' },
@@ -40,19 +46,27 @@ function SignalCard({ signal, blurred }) {
     : a.competition != null
       ? a.competition < 4 ? VALIDATION_META.blank : a.competition < 7 ? VALIDATION_META.weak : VALIDATION_META.covered
       : null
+  const sm = signal.signalStrength ? STRENGTH_META[signal.signalStrength] : null
 
   return (
-    <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px 16px', marginBottom: 10, background: '#fff', filter: blurred ? 'blur(4px)' : 'none', userSelect: blurred ? 'none' : 'auto', pointerEvents: blurred ? 'none' : 'auto' }}>
+    <div style={{ border: `1px solid ${sm?.color ? sm.color + '44' : '#e5e7eb'}`, borderRadius: 10, padding: '14px 16px', marginBottom: 10, background: '#fff', filter: blurred ? 'blur(4px)' : 'none', userSelect: blurred ? 'none' : 'auto', pointerEvents: blurred ? 'none' : 'auto' }}>
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6, alignItems: 'center' }}>
+        {sm && badge(`${sm.icon} ${sm.label}`, sm.bg, sm.color)}
         {badge(tm.label, tm.bg, tm.color)}
         {signal.category && badge(signal.category, '#f3f0ff', '#7c3aed')}
         {signal.aiScore && badge(`${signal.aiScore.toFixed(1)}/10`, signal.aiScore >= 8 ? '#d1fae5' : signal.aiScore >= 6 ? '#fef3c7' : '#f3f4f6', signal.aiScore >= 8 ? '#065f46' : signal.aiScore >= 6 ? '#92400e' : '#6b7280')}
         {vm && badge(vm.label, vm.bg, vm.color)}
         <span style={{ marginLeft: 'auto', fontSize: 11, color: '#9ca3af' }}>
-          {pm.icon} {pm.label} · 👍{signal.upvotes}{signal.upvoteVelocity > 0 ? ` ↑${Math.round(signal.upvoteVelocity)}/天` : ''}
+          {signal.flag || ''} {pm.icon} {pm.label} · 👍{signal.upvotes}{signal.upvoteVelocity > 0 ? ` ↑${Math.round(signal.upvoteVelocity)}/天` : ''}
         </span>
       </div>
-      <div style={{ fontWeight: 600, fontSize: 14, color: '#111', marginBottom: a.advice ? 4 : 8, lineHeight: 1.4 }}>{signal.title}</div>
+      <div style={{ fontWeight: 600, fontSize: 14, color: '#111', marginBottom: 2, lineHeight: 1.4 }}>
+        {signal.translatedTitle || signal.title}
+      </div>
+      {signal.translatedTitle && signal.translatedTitle !== signal.title
+        ? <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: a.advice ? 4 : 8 }}>{signal.title}</div>
+        : <div style={{ marginBottom: a.advice ? 4 : 8 }} />
+      }
       {a.advice && <div style={{ fontSize: 13, color: '#7c3aed', marginBottom: 8 }}>💡 {a.advice}</div>}
       <div style={{ display: 'flex', gap: 10, fontSize: 12, flexWrap: 'wrap' }}>
         <a href={signal.url} target="_blank" rel="noopener" style={{ color: '#6b7280', textDecoration: 'underline' }}>原帖 →</a>

@@ -73,6 +73,10 @@ model Signal {
   githubUrl         String?
   freeSolutionScore Float?
   validationStatus  String?
+  signalStrength    String?
+  lang              String?
+  flag              String?
+  translatedTitle   String?
   createdAt         DateTime @default(now())
 }
 

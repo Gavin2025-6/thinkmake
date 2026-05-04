@@ -6,6 +6,8 @@ import { scrapeAppStore } from '../../../lib/appstore'
 import { scrapeGooglePlay } from '../../../lib/googleplay'
 import { scrapeYouTube } from '../../../lib/youtube'
 import { scrapeProductHunt } from '../../../lib/producthunt'
+import { scrapeV2EX } from '../../../lib/v2ex'
+import { translateSignals } from '../../../lib/translate'
 import { clusterSignals } from '../../../lib/cluster'
 import { validateWithGitHub, applyScoreAdjustment } from '../../../lib/github'
 import { sendTelegram } from '../../../lib/telegram'
@@ -25,6 +27,7 @@ async function ensureTables() {
       "upvoteVelocity" DOUBLE PRECISION, "lastPushedType" TEXT,
       "githubExists" BOOLEAN, "githubStars" INTEGER, "githubUrl" TEXT,
       "freeSolutionScore" DOUBLE PRECISION, "validationStatus" TEXT,
+      "signalStrength" TEXT, "lang" TEXT, "flag" TEXT, "translatedTitle" TEXT,
       "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "Signal_pkey" PRIMARY KEY ("id")
     )`)
@@ -44,6 +47,10 @@ async function ensureTables() {
     ['"githubUrl"',         'TEXT'],
     ['"freeSolutionScore"', 'DOUBLE PRECISION'],
     ['"validationStatus"',  'TEXT'],
+    ['"signalStrength"',    'TEXT'],
+    ['"lang"',              'TEXT'],
+    ['"flag"',              'TEXT'],
+    ['"translatedTitle"',   'TEXT'],
   ]) {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Signal" ADD COLUMN IF NOT EXISTS ${col} ${type}`)
   }
@@ -91,6 +98,21 @@ function detectCategory(text) {
   return '📱 生活类'
 }
 
+// signalStrength: high 🔴 / medium 🟡 / low 🟢
+// Based on: upvotes, source credibility, title keyword strength
+const HIGH_KEYWORDS = ['wish there was', 'someone should make', 'why is there no', 'need a free', 'i want an app', 'too expensive', 'overpriced', 'used to be free']
+function calcSignalStrength(signal) {
+  const u = signal.upvotes || 0
+  const text = `${signal.title} ${signal.content || ''}`.toLowerCase()
+  const hasHighKw = HIGH_KEYWORDS.some(kw => text.includes(kw))
+
+  // High: upvotes > 50, OR upvotes > 10 + high keyword
+  if (u > 50 || (u > 10 && hasHighKw)) return 'high'
+  // Low: upvotes < 5 (appstore always 0)
+  if (u < 5) return 'low'
+  return 'medium'
+}
+
 // Returns null for low-signal noise (upvotes < 5)
 function ruleScore(signal) {
   const u = signal.upvotes || 0
@@ -103,7 +125,8 @@ function ruleScore(signal) {
   else             score = 4
 
   const text = `${signal.title} ${signal.content || ''}`
-  return { ...signal, aiScore: score, category: detectCategory(text), aiAnalysis: null }
+  return { ...signal, aiScore: score, category: detectCategory(text), aiAnalysis: null,
+    signalStrength: calcSignalStrength(signal) }
 }
 
 // Build advice text after GitHub validation result is known
@@ -243,8 +266,10 @@ async function checkTrendAlerts() {
 // ─── Report format ────────────────────────────────────────────
 const PLATFORM_ICON = {
   reddit: '👾', hackernews: '🟠', appstore: '🍎',
-  googleplay: '🤖', youtube: '▶️', producthunt: '🐱',
+  googleplay: '🤖', youtube: '▶️', producthunt: '🐱', v2ex: '🟦',
 }
+
+const STRENGTH_ICON = { high: '🔴', medium: '🟡', low: '🟢' }
 
 const VALIDATION_LABEL = {
   blank:   '✅ 验证空白',
@@ -255,6 +280,8 @@ const VALIDATION_LABEL = {
 function fmtSignal(s) {
   const a = s.aiAnalysis || {}
   const icon = PLATFORM_ICON[s.platform] || '📡'
+  const strength = STRENGTH_ICON[s.signalStrength] || ''
+  const flag = s.flag || ''
   const vel = s.upvoteVelocity > 0 ? ` ↑${Math.round(s.upvoteVelocity)}/天` : ''
   const validation = s.validationStatus
     ? VALIDATION_LABEL[s.validationStatus]
@@ -262,9 +289,10 @@ function fmtSignal(s) {
       ? a.competition < 4 ? '✅ 空白' : a.competition < 7 ? '⚠️ 有竞品' : '❌ 已有免费'
       : ''
   const github = s.githubExists && s.githubUrl ? ` | ⭐${s.githubStars} ${s.githubUrl}` : ''
+  const displayTitle = s.translatedTitle ? `${s.translatedTitle} ${flag}` : s.title
   return [
-    s.title,
-    `${icon} 来源 | 热度：${s.upvotes}${vel} | ${validation}${github}`,
+    `${strength} ${displayTitle}`,
+    `${icon} ${flag} 来源 | 热度：${s.upvotes}${vel} | ${validation}${github}`,
     a.advice ? `💡 ${a.advice}` : '',
     `🔗 ${s.url}`,
   ].filter(Boolean).join('\n')
@@ -285,6 +313,12 @@ function formatReport(signals, reportType, trendAlerts) {
     (s.aiScore || 0) > 7
   ).sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0)).slice(0, 3)
 
+  // 🚨 求人做 = high signalStrength + blank validation (top 3)
+  const wantedSigs = signals.filter(s =>
+    s.signalStrength === 'high' &&
+    (s.validationStatus === 'blank' || !s.validationStatus)
+  ).sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0)).slice(0, 3)
+
   const sec = (header, list) => {
     if (!list.length) return []
     return ['', header, ...list.map(s => `\n${fmtSignal(s)}`)]
@@ -296,6 +330,7 @@ function formatReport(signals, reportType, trendAlerts) {
     `🕐 多伦多 ${nowCA} / 北京 ${nowCN}`,
     `本期信号：${signals.length} 条`,
     `═══════════════════════════`,
+    ...sec(`🚨 求人做！— 强需求 + 无免费方案 [${wantedSigs.length}条]`, wantedSigs),
     ...sec(`🆕 今日新信号 [${newSigs.length}条]\n过去24小时新出现的需求`, newSigs),
     ...sec(`🔥 热度上升 [${risingSigs.length}条]\n今日 upvote 暴涨`, risingSigs),
     ...sec(`📊 持续热门 [${persSigs.length}条]\n连续多天高分`, persSigs),
@@ -324,17 +359,18 @@ export async function POST(request) {
 
     // ── 1. Scrape all sources in parallel ─────────────────────
     console.log('[Signal] Scraping all sources...')
-    const [reddit, hn, appstore, gplay, yt, ph] = await Promise.allSettled([
+    const [reddit, hn, appstore, gplay, yt, ph, v2ex] = await Promise.allSettled([
       scrapeReddit(), scrapeHackerNews(), scrapeAppStore(),
-      scrapeGooglePlay(), scrapeYouTube(), scrapeProductHunt(),
+      scrapeGooglePlay(), scrapeYouTube(), scrapeProductHunt(), scrapeV2EX(),
     ])
-    const raw = [
+    let raw = [
       ...(reddit.value    || []),
       ...(hn.value        || []),
       ...(appstore.value  || []),
       ...(gplay.value     || []),
       ...(yt.value        || []),
       ...(ph.value        || []),
+      ...(v2ex.value      || []),
     ]
     const srcCounts = {
       reddit:       reddit.value?.length    || 0,
@@ -343,8 +379,12 @@ export async function POST(request) {
       gplay:        gplay.value?.length     || 0,
       youtube:      yt.value?.length        || 0,
       producthunt:  ph.value?.length        || 0,
+      v2ex:         v2ex.value?.length      || 0,
     }
     console.log('[Signal] Raw:', srcCounts)
+
+    // ── 1b. Optional translation for non-English signals ──────
+    raw = await translateSignals(raw)
 
     // ── 2. Dedup ──────────────────────────────────────────────
     const urls = raw.map(r => r.url)
@@ -388,9 +428,9 @@ export async function POST(request) {
           (id,"postId",platform,source,subreddit,"appName",rating,category,title,url,content,
            upvotes,date,"aiScore","aiAnalysis","firstSeen","lastSeen","upvotesHistory","signalType",
            "upvoteVelocity","githubExists","githubStars","githubUrl","freeSolutionScore",
-           "validationStatus","createdAt")
+           "validationStatus","signalStrength","lang","flag","translatedTitle","createdAt")
         VALUES (gen_random_uuid()::text,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,
-                NOW(),NOW(),$15::jsonb,'new',0,$16,$17,$18,$19,$20,NOW())
+                NOW(),NOW(),$15::jsonb,'new',0,$16,$17,$18,$19,$20,$21,$22,$23,$24,NOW())
         ON CONFLICT (url) DO NOTHING`,
         s.postId||null, s.platform||'reddit', s.source, s.subreddit||null,
         s.appName||null, s.rating||null, s.category||null, s.title, s.url, s.content||null,
@@ -398,7 +438,8 @@ export async function POST(request) {
         s.aiAnalysis ? JSON.stringify(s.aiAnalysis) : null,
         JSON.stringify([{ t: now.toISOString(), v: s.upvotes }]),
         s.githubExists ?? null, s.githubStars ?? null, s.githubUrl || null,
-        s.freeSolutionScore ?? null, s.validationStatus || null
+        s.freeSolutionScore ?? null, s.validationStatus || null,
+        s.signalStrength || null, s.lang || null, s.flag || null, s.translatedTitle || null
       )
     }
 

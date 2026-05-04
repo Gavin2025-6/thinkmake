@@ -29,7 +29,7 @@ export async function GET(request) {
              s."clusterId", s."signalType", s."upvoteVelocity", s."firstSeen", s."lastSeen",
              COALESCE(s."githubExists", false)   AS "githubExists",
              s."githubStars", s."githubUrl", s."freeSolutionScore",
-             s."validationStatus"
+             s."validationStatus", s."signalStrength", s."lang", s."flag", s."translatedTitle"
       FROM "Signal" s
       WHERE ${conds.join(' AND ')}
       ORDER BY ${orderCol} DESC NULLS LAST
