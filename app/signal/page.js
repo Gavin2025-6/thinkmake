@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // ─── Constants ───────────────────────────────────────────────
-const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📱 生活类', '🔧 其他']
+const CATEGORIES = ['🛠 工具类', '🎨 创意类', '💰 金融类', '🏥 健康类', '📚 教育类', '💬 社交类', '📱 生活类']
 const PLATFORMS  = ['reddit', 'hackernews', 'appstore', 'googleplay', 'youtube', 'producthunt', 'v2ex']
 const PLATFORM_META = {
   reddit:       { icon: '👾', label: 'Reddit' },

@@ -81,13 +81,21 @@ async function ensureTables() {
 // ─── Rule-based scoring (zero API cost) ──────────────────────
 const CATEGORY_RULES = [
   { cat: '🛠 工具类', words: ['tool','tools','software','plugin','extension','utility',
-      'editor','converter','manager','tracker','scanner','reader','parser','automation','workflow'] },
+      'editor','converter','manager','tracker','scanner','reader','parser','automation','workflow',
+      'note','notes','task','tasks','pdf','calendar','reminder','planner'] },
   { cat: '🎨 创意类', words: ['image','video','audio','photo','music','design','art',
-      'creative','edit','record','draw','animation','render','podcast','stream','color','font'] },
+      'creative','edit','record','draw','animation','render','podcast','stream','color','font',
+      'camera','filter','effect','clip','footage'] },
   { cat: '💰 金融类', words: ['money','finance','budget','tax','invoice','payment',
-      'accounting','expense','cost','billing','subscription','revenue','salary','bank','crypto'] },
+      'accounting','expense','billing','subscription','revenue','salary','bank','crypto',
+      'invest','stock','trading','portfolio','expense'] },
   { cat: '🏥 健康类', words: ['health','fitness','workout','diet','sleep','medical',
-      'wellness','exercise','calories','weight','yoga','therapy','mental','nutrition'] },
+      'wellness','exercise','calories','weight','yoga','therapy','mental','nutrition',
+      'meditation','mindfulness','running','cycling','steps'] },
+  { cat: '📚 教育类', words: ['learn','learning','language','course','lesson','study',
+      'education','tutor','book','reading','vocabulary','grammar','skill','knowledge'] },
+  { cat: '💬 社交类', words: ['social','chat','message','community','friend','follow',
+      'share','post','group','channel','voice','call','discord','telegram'] },
 ]
 
 function detectCategory(text) {
@@ -99,22 +107,36 @@ function detectCategory(text) {
 }
 
 // signalStrength: high 🔴 / medium 🟡 / low 🟢
-// Based on: upvotes, source credibility, title keyword strength
-const HIGH_KEYWORDS = ['wish there was', 'someone should make', 'why is there no', 'need a free', 'i want an app', 'too expensive', 'overpriced', 'used to be free']
+const HIGH_KEYWORDS = ['wish there was', 'someone should make', 'why is there no', 'need a free',
+  'i want an app', 'too expensive', 'overpriced', 'used to be free', 'ruined by subscription',
+  'cash grab', 'money grab', 'highway robbery', 'ripoff', 'rip off', 'should be free']
+
 function calcSignalStrength(signal) {
-  const u = signal.upvotes || 0
   const text = `${signal.title} ${signal.content || ''}`.toLowerCase()
   const hasHighKw = HIGH_KEYWORDS.some(kw => text.includes(kw))
 
-  // High: upvotes > 50, OR upvotes > 10 + high keyword
+  // App Store: keyword-based only (upvotes always 0)
+  if (signal.platform === 'appstore') {
+    return hasHighKw ? 'high' : 'medium'
+  }
+
+  const u = signal.upvotes || 0
   if (u > 50 || (u > 10 && hasHighKw)) return 'high'
-  // Low: upvotes < 5 (appstore always 0)
   if (u < 5) return 'low'
   return 'medium'
 }
 
-// Returns null for low-signal noise (upvotes < 5)
+// Returns null for low-signal noise (upvotes < 5 for non-appstore)
 function ruleScore(signal) {
+  // App Store: always score — passed keyword filter already, upvotes always 0
+  if (signal.platform === 'appstore') {
+    const score = (signal.rating || 2) === 1 ? 6 : 5
+    const text = `${signal.title} ${signal.content || ''}`
+    return { ...signal, aiScore: score,
+      category: signal.category || detectCategory(text), aiAnalysis: null,
+      signalStrength: calcSignalStrength(signal) }
+  }
+
   const u = signal.upvotes || 0
   if (u < 5) return null
 
@@ -298,6 +320,55 @@ function fmtSignal(s) {
   ].filter(Boolean).join('\n')
 }
 
+// ─── App Store complaint analysis ────────────────────────────
+const COMPLAINT_THEMES = [
+  { key: 'subscription', label: '订阅模式', words: ['subscription', 'subscribe', 'renewal', 'monthly', 'annual', 'yearly', 'ruined by subscription'] },
+  { key: 'expensive',    label: '价格太贵', words: ['expensive', 'overpriced', 'too much', 'cash grab', 'money grab', 'ripoff', 'rip off', 'highway robbery', 'not worth'] },
+  { key: 'paywall',      label: '功能付费墙', words: ['paywalled', 'paywall', 'locked', 'used to be free', 'should be free', 'need free', 'free version', 'free alternative'] },
+  { key: 'cancel',       label: '取消订阅', words: ['cancelled', 'unsubscribed', 'cancelling', 'cancel'] },
+]
+
+function buildAppStoreSection(signals) {
+  const appStoreSigs = signals.filter(s => s.platform === 'appstore')
+  if (!appStoreSigs.length) return ''
+
+  // Group by appName
+  const byApp = {}
+  for (const s of appStoreSigs) {
+    const key = s.appName || 'Unknown'
+    if (!byApp[key]) byApp[key] = []
+    byApp[key].push(s)
+  }
+
+  // Sort apps by review count desc, take top 8
+  const topApps = Object.entries(byApp)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 8)
+
+  const lines = ['', '📱 App Store用户在抱怨什么']
+  for (const [appName, reviews] of topApps) {
+    const themes = {}
+    for (const r of reviews) {
+      const text = `${r.title || ''} ${r.content || ''}`.toLowerCase()
+      for (const t of COMPLAINT_THEMES) {
+        if (t.words.some(w => text.includes(w))) {
+          themes[t.key] = (themes[t.key] || 0) + 1
+        }
+      }
+    }
+    const themeStr = COMPLAINT_THEMES
+      .filter(t => themes[t.key])
+      .sort((a, b) => (themes[b.key] || 0) - (themes[a.key] || 0))
+      .map(t => `${t.label}(${themes[t.key]})`)
+      .join(' · ')
+    lines.push(`${appName}（${reviews.length}条）：${themeStr || '价格投诉'}`)
+  }
+
+  const totalApps = Object.keys(byApp).length
+  lines.push(`共 ${appStoreSigs.length} 条差评，覆盖 ${totalApps} 个 App`)
+  return lines.join('\n')
+}
+
 function formatReport(signals, reportType, trendAlerts) {
   const nowCN = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
   const nowCA = new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto' })
@@ -324,6 +395,8 @@ function formatReport(signals, reportType, trendAlerts) {
     return ['', header, ...list.map(s => `\n${fmtSignal(s)}`)]
   }
 
+  const appStoreSection = buildAppStoreSection(signals)
+
   const lines = [
     `═══════════════════════════`,
     `📊 SignalHunt ${label}`,
@@ -335,6 +408,7 @@ function formatReport(signals, reportType, trendAlerts) {
     ...sec(`🔥 热度上升 [${risingSigs.length}条]\n今日 upvote 暴涨`, risingSigs),
     ...sec(`📊 持续热门 [${persSigs.length}条]\n连续多天高分`, persSigs),
     ...sec(`✅ 已验证空白 — 最高价值 [${verified.length}条]\n无免费方案 + 高热度`, verified),
+    appStoreSection,
   ]
 
   if (trendAlerts?.length) {
